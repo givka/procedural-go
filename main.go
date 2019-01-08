@@ -1,152 +1,262 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"runtime"
-	"strings"
 
-	"github.com/go-gl/gl/v4.1-core/gl" // OR: github.com/go-gl/gl/v2.1/gl
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"./cam"
+	"./gfx"
+	"./win"
+
+	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/glfw/v3.1/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
-const (
-	width  = 500
-	height = 500
+// vertices to draw 6 faces of a cube
+var cubeVertices = []float32{
+	// position        // normal vector
+	-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+	0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+	0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+	0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+	-0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+	-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
 
-	vertexShaderSource = `
-		#version 410
-		in vec3 vp;
-		out vec4 pos;
-		void main() {
-			gl_Position = vec4(vp, 1.0);
-		}
-	` + "\x00"
+	-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+	0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+	0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+	0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+	-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+	-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
 
-	fragmentShaderSource = `
-		#version 410
-		in vec3 pos;
-		out vec4 frag_colour;
-		void main() {
-			frag_colour = vec4(1, 1, 0, 1.0);
-		}
-	` + "\x00"
-)
+	-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+	-0.5, 0.5, -0.5, -1.0, 0.0, 0.0,
+	-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
+	-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
+	-0.5, -0.5, 0.5, -1.0, 0.0, 0.0,
+	-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
 
-var (
-	triangle = []float32{
-		0, 0.5, 0,
-		-0.5, -0.5, 0,
-		0.5, -0.5, 0,
-	}
-)
+	0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+	0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
+	0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+	0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+	0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
+	0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+
+	-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+	0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+	0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+	0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+	-0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+	-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+
+	-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+	0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+	-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+	-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+}
+
+var cubePositions = [][]float32{
+	{0.0, 0.0, -3.0},
+	{2.0, 5.0, -15.0},
+	{-1.5, -2.2, -2.5},
+	{-3.8, -2.0, -12.3},
+	{2.4, -0.4, -3.5},
+	{-1.7, 3.0, -7.5},
+	{1.3, -2.0, -2.5},
+	{1.5, 2.0, -2.5},
+	{1.5, 0.2, -1.5},
+	{-1.3, 1.0, -1.5},
+}
+
+func init() {
+	// GLFW event handling must be run on the main OS thread
+	runtime.LockOSThread()
+}
 
 func main() {
-
-	runtime.LockOSThread()
-
-	window := initGlfw()
-	defer glfw.Terminate()
-	program := initOpenGL()
-
-	vao := makeVao(triangle)
-	for !window.ShouldClose() {
-		draw(vao, window, program)
-	}
-}
-
-func draw(vao uint32, window *glfw.Window, program uint32) {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.UseProgram(program)
-
-	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
-
-	glfw.PollEvents()
-	window.SwapBuffers()
-}
-
-// initGlfw initializes glfw and returns a Window to use.
-func initGlfw() *glfw.Window {
 	if err := glfw.Init(); err != nil {
-		panic(err)
+		log.Fatalln("failed to inifitialize glfw:", err)
 	}
+	defer glfw.Terminate()
+
+	log.Println(glfw.GetVersionString())
+
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(width, height, "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	window.MakeContextCurrent()
+	window := win.NewWindow(1280, 720, "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD")
 
-	return window
-}
-
-// initOpenGL initializes OpenGL and returns an intiialized program.
-func initOpenGL() uint32 {
+	// Initialize Glow (go function bindings)
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	log.Println("OpenGL version", version)
 
-	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
+	err := programLoop(window)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-
-	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
-	if err != nil {
-		panic(err)
-	}
-
-	prog := gl.CreateProgram()
-	gl.AttachShader(prog, vertexShader)
-	gl.AttachShader(prog, fragmentShader)
-	gl.LinkProgram(prog)
-	return prog
 }
 
-// makeVao initializes and returns a vertex array from the points provided.
-func makeVao(points []float32) uint32 {
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
+/*
+ * Creates the Vertex Array Object for a triangle.
+ * indices is leftover from earlier samples and not used here.
+ */
+func createVAO(vertices []float32, indices []uint32) uint32 {
 
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
+	var VAO uint32
+	gl.GenVertexArrays(1, &VAO)
+
+	var VBO uint32
+	gl.GenBuffers(1, &VBO)
+
+	var EBO uint32
+	gl.GenBuffers(1, &EBO)
+
+	// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointers()
+	gl.BindVertexArray(VAO)
+
+	// copy vertices data into VBO (it needs to be bound first)
+	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
+
+	// size of one whole vertex (sum of attrib sizes)
+	var stride int32 = 3*4 + 3*4
+	var offset int
+
+	// position
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
 	gl.EnableVertexAttribArray(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
+	offset += 3 * 4
 
-	return vao
+	// normal
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
+	gl.EnableVertexAttribArray(1)
+	offset += 3 * 4
+
+	// unbind the VAO (safe practice so we don't accidentally (mis)configure it later)
+	gl.BindVertexArray(0)
+
+	return VAO
 }
 
-func compileShader(source string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
+func programLoop(window *win.Window) error {
 
-	csources, free := gl.Strs(source)
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
-
-	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
+	// the linked shader program determines how the data will be rendered
+	vertShader, err := gfx.NewShaderFromFile("shaders/phong.vert", gl.VERTEX_SHADER)
+	if err != nil {
+		return err
 	}
 
-	return shader, nil
+	fragShader, err := gfx.NewShaderFromFile("shaders/phong.frag", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return err
+	}
+
+	program, err := gfx.NewProgram(vertShader, fragShader)
+	if err != nil {
+		return err
+	}
+	defer program.Delete()
+
+	lightFragShader, err := gfx.NewShaderFromFile("shaders/light.frag", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return err
+	}
+
+	// special shader program so that lights themselves are not affected by lighting
+	lightProgram, err := gfx.NewProgram(vertShader, lightFragShader)
+	if err != nil {
+		return err
+	}
+
+	VAO := createVAO(cubeVertices, nil)
+	lightVAO := createVAO(cubeVertices, nil)
+
+	// ensure that triangles that are "behind" others do not draw over top of them
+	gl.Enable(gl.DEPTH_TEST)
+
+	camera := cam.NewFpsCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 1, 0}, -90, 0, window.InputManager())
+
+	for !window.ShouldClose() {
+
+		// swaps in last buffer, polls for window events, and generally sets up for a new render frame
+		window.StartFrame()
+
+		// update camera position and direction from input evevnts
+		camera.Update(window.SinceLastFrame())
+
+		// background color
+		gl.ClearColor(135.0/255.0, 206.0/255.0, 250.0/255.0, 1.0)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) // depth buffer needed for DEPTH_TEST
+
+		// creates perspective
+		fov := float32(90.0)
+		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov),
+			float32(window.Width())/float32(window.Height()),
+			0.1,
+			100.0)
+
+		camTransform := camera.GetTransform()
+		lightPos := mgl32.Vec3{0.6, 1, 0.1}
+		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
+			mgl32.Scale3D(0.2, 0.2, 0.2))
+
+		program.Use()
+		gl.UniformMatrix4fv(program.GetUniformLocation("view"), 1, false, &camTransform[0])
+		gl.UniformMatrix4fv(program.GetUniformLocation("project"), 1, false,
+			&projectTransform[0])
+
+		gl.BindVertexArray(VAO)
+
+		// draw each cube after all coordinate system transforms are bound
+
+		// obj is colored, light is white
+		gl.Uniform3f(program.GetUniformLocation("objectColor"), 1.0, 0.5, 0.31)
+		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
+		gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
+
+		// cube rotation matrices
+		rotateX := (mgl32.Rotate3DX(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
+		rotateY := (mgl32.Rotate3DY(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
+		rotateZ := (mgl32.Rotate3DZ(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
+
+		for _, pos := range cubePositions {
+
+			// turn the cubes into rectangular prisms for more fun
+			worldTranslate := mgl32.Translate3D(pos[0], pos[1], pos[2])
+			worldTransform := worldTranslate.Mul4(
+				rotateX.Mul3(rotateY).Mul3(rotateZ).Mat4().Mul4(
+					mgl32.Scale3D(1.2, 1.2, 0.7),
+				),
+			)
+
+			gl.UniformMatrix4fv(program.GetUniformLocation("model"), 1, false,
+				&worldTransform[0])
+
+			gl.DrawArrays(gl.TRIANGLES, 0, 36)
+		}
+		gl.BindVertexArray(0)
+
+		// Draw the light obj after the other boxes using its separate shader program
+		// this means that we must re-bind any uniforms
+		lightProgram.Use()
+		gl.BindVertexArray(lightVAO)
+		gl.UniformMatrix4fv(lightProgram.GetUniformLocation("model"), 1, false, &lightTransform[0])
+		gl.UniformMatrix4fv(lightProgram.GetUniformLocation("view"), 1, false, &camTransform[0])
+		gl.UniformMatrix4fv(lightProgram.GetUniformLocation("project"), 1, false, &projectTransform[0])
+		gl.DrawArrays(gl.TRIANGLES, 0, 36)
+
+		gl.BindVertexArray(0)
+
+		// end of draw loop
+	}
+
+	return nil
 }
