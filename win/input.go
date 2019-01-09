@@ -5,21 +5,35 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 )
 
-// Action is a configurable abstraction of a key press
-type Action int
+// ActionKey is a configurable abstraction of a key press
+type ActionKey int
 
-// Action enum
+// ActionKey enum
 const (
-	PlayerForward  Action = iota
-	PlayerBackward Action = iota
-	PlayerLeft     Action = iota
-	PlayerRight    Action = iota
-	ProgramQuit    Action = iota
+	PlayerForward  ActionKey = iota
+	PlayerBackward ActionKey = iota
+	PlayerLeft     ActionKey = iota
+	PlayerRight    ActionKey = iota
+	ProgramQuit    ActionKey = iota
 )
 
+// ActionButton is a configurable abstraction of a mouse button press
+type ActionButton int
+
+// ActionButton enum
+const (
+	MouseLeft   ActionButton = iota
+	MouseRight  ActionButton = iota
+	MouseMiddle ActionButton = iota
+)
+
+// InputManager class to get keyboard and mouseButton actions
 type InputManager struct {
-	actionToKeyMap map[Action]glfw.Key
+	actionToKeyMap    map[ActionKey]glfw.Key
+	actionToButtonMap map[ActionButton]glfw.MouseButton
+
 	keysPressed    [glfw.KeyLast]bool
+	buttonsPressed [glfw.MouseButtonLast]bool
 
 	firstCursorAction    bool
 	cursor               mgl64.Vec2
@@ -28,8 +42,9 @@ type InputManager struct {
 	bufferedCursorChange mgl64.Vec2
 }
 
+// NewInputManager returns an initialized InputManager
 func NewInputManager() *InputManager {
-	actionToKeyMap := map[Action]glfw.Key{
+	actionToKeyMap := map[ActionKey]glfw.Key{
 		PlayerForward:  glfw.KeyW,
 		PlayerBackward: glfw.KeyS,
 		PlayerLeft:     glfw.KeyA,
@@ -37,15 +52,27 @@ func NewInputManager() *InputManager {
 		ProgramQuit:    glfw.KeyEscape,
 	}
 
+	actionToButtonMap := map[ActionButton]glfw.MouseButton{
+		MouseLeft:   glfw.MouseButton1,
+		MouseRight:  glfw.MouseButton2,
+		MouseMiddle: glfw.MouseButton3,
+	}
+
 	return &InputManager{
 		actionToKeyMap:    actionToKeyMap,
-		firstCursorAction: false,
+		actionToButtonMap: actionToButtonMap,
+		firstCursorAction: true,
 	}
 }
 
-// IsActive returns whether the given Action is currently active
-func (im *InputManager) IsActive(a Action) bool {
+// IsKeyActive returns whether the given Action is currently active
+func (im *InputManager) IsKeyActive(a ActionKey) bool {
 	return im.keysPressed[im.actionToKeyMap[a]]
+}
+
+// IsButtonActive returns whether the given ActionButton is currently active
+func (im *InputManager) IsButtonActive(a ActionButton) bool {
+	return im.buttonsPressed[im.actionToButtonMap[a]]
 }
 
 // Cursor returns the value of the cursor at the last time that CheckpointCursorChange() was called.
@@ -82,9 +109,32 @@ func (im *InputManager) keyCallback(window *glfw.Window, key glfw.Key, scancode 
 	case glfw.Release:
 		im.keysPressed[key] = false
 	}
+
+}
+
+func (im *InputManager) mouseButtonCallback(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mod glfw.ModifierKey) {
+	switch action {
+	case glfw.Press:
+		im.buttonsPressed[button] = true
+	case glfw.Release:
+		im.buttonsPressed[button] = false
+	}
+
+	if im.actionToButtonMap[MouseLeft] == button {
+		if im.buttonsPressed[button] {
+			im.firstCursorAction = true
+			w.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+		} else {
+			w.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
+		}
+	}
 }
 
 func (im *InputManager) mouseCallback(window *glfw.Window, xpos, ypos float64) {
+
+	if !im.IsButtonActive(MouseLeft) {
+		return
+	}
 
 	if im.firstCursorAction {
 		im.cursorLast[0] = xpos

@@ -52,16 +52,16 @@ func (c *FpsCamera) Update(dTime float64) {
 func (c *FpsCamera) updatePosition(dTime float64) {
 	adjustedSpeed := float32(dTime * c.moveSpeed)
 
-	if c.inputManager.IsActive(win.PlayerForward) {
+	if c.inputManager.IsKeyActive(win.PlayerForward) {
 		c.pos = c.pos.Add(c.front.Mul(adjustedSpeed))
 	}
-	if c.inputManager.IsActive(win.PlayerBackward) {
+	if c.inputManager.IsKeyActive(win.PlayerBackward) {
 		c.pos = c.pos.Sub(c.front.Mul(adjustedSpeed))
 	}
-	if c.inputManager.IsActive(win.PlayerLeft) {
+	if c.inputManager.IsKeyActive(win.PlayerLeft) {
 		c.pos = c.pos.Sub(c.front.Cross(c.up).Normalize().Mul(adjustedSpeed))
 	}
-	if c.inputManager.IsActive(win.PlayerRight) {
+	if c.inputManager.IsKeyActive(win.PlayerRight) {
 		c.pos = c.pos.Add(c.front.Cross(c.up).Normalize().Mul(adjustedSpeed))
 	}
 }
@@ -97,14 +97,14 @@ func (c *FpsCamera) updateVectors() {
 	c.up = c.right.Cross(c.front).Normalize()
 }
 
-// GetCameraTransform gets the matrix to transform from world coordinates to
+// GetTransform gets the matrix to transform from world coordinates to
 // this camera's coordinates.
-func (camera *FpsCamera) GetTransform() mgl32.Mat4 {
-	cameraTarget := camera.pos.Add(camera.front)
+func (c *FpsCamera) GetTransform() mgl32.Mat4 {
+	cameraTarget := c.pos.Add(c.front)
 
 	return mgl32.LookAt(
-		camera.pos.X(), camera.pos.Y(), camera.pos.Z(),
+		c.pos.X(), c.pos.Y(), c.pos.Z(),
 		cameraTarget.X(), cameraTarget.Y(), cameraTarget.Z(),
-		camera.up.X(), camera.up.Y(), camera.up.Z(),
+		c.up.X(), c.up.Y(), c.up.Z(),
 	)
 }

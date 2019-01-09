@@ -9,6 +9,7 @@ import (
 	"github.com/go-gl/glfw/v3.1/glfw"
 )
 
+// Window class for the glfw window
 type Window struct {
 	glfw  *glfw.Window
 	title string
@@ -20,6 +21,7 @@ type Window struct {
 	lastFrameTime float64
 }
 
+// InputManager returns the current InputManager
 func (w *Window) InputManager() *InputManager {
 	return w.inputManager
 }
@@ -47,7 +49,8 @@ func NewWindow(width int, height int, title string, vsync bool) *Window {
 
 	// uncomment this to disable cursor
 	// gWindow.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
-	// gWindow.SetCursorPosCallback(im.mouseCallback)
+	gWindow.SetCursorPosCallback(im.mouseCallback)
+	gWindow.SetMouseButtonCallback(im.mouseButtonCallback)
 	gWindow.SetKeyCallback(im.keyCallback)
 	gWindow.SetSizeCallback(resizeCallback)
 
@@ -61,16 +64,19 @@ func NewWindow(width int, height int, title string, vsync bool) *Window {
 
 }
 
+// Width returns window width
 func (w *Window) Width() int {
 	width, _ := w.glfw.GetFramebufferSize()
 	return width
 }
 
+// Height returns window height
 func (w *Window) Height() int {
 	_, height := w.glfw.GetFramebufferSize()
 	return height
 }
 
+// ShouldClose returns if the window should close
 func (w *Window) ShouldClose() bool {
 	return w.glfw.ShouldClose()
 }
@@ -85,7 +91,7 @@ func (w *Window) StartFrame() {
 	// poll for UI window events
 	glfw.PollEvents()
 
-	if w.inputManager.IsActive(ProgramQuit) {
+	if w.inputManager.IsKeyActive(ProgramQuit) {
 		w.glfw.SetShouldClose(true)
 	}
 
