@@ -1,76 +1,85 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"runtime"
+	"time"
 
 	"./cam"
 	"./gfx"
 	"./win"
-
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/worldsproject/noiselib"
 )
 
 // vertices to draw 6 faces of a cube
 var cubeVertices = []float32{
 	// position        // normal vector
-	-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
-	0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
-	0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-	0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-	-0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-	-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+	-0.1, -0.1, -0.1, 0.0, 0.0, -1.0,
+	0.1, -0.1, -0.1, 0.0, 0.0, -1.0,
+	0.1, 0.1, -0.1, 0.0, 0.0, -1.0,
+	0.1, 0.1, -0.1, 0.0, 0.0, -1.0,
+	-0.1, 0.1, -0.1, 0.0, 0.0, -1.0,
+	-0.1, -0.1, -0.1, 0.0, 0.0, -1.0,
 
-	-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
-	0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
-	0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-	0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-	-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-	-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+	-0.1, -0.1, 0.1, 0.0, 0.0, 1.0,
+	0.1, -0.1, 0.1, 0.0, 0.0, 1.0,
+	0.1, 0.1, 0.1, 0.0, 0.0, 1.0,
+	0.1, 0.1, 0.1, 0.0, 0.0, 1.0,
+	-0.1, 0.1, 0.1, 0.0, 0.0, 1.0,
+	-0.1, -0.1, 0.1, 0.0, 0.0, 1.0,
 
-	-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
-	-0.5, 0.5, -0.5, -1.0, 0.0, 0.0,
-	-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
-	-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
-	-0.5, -0.5, 0.5, -1.0, 0.0, 0.0,
-	-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+	-0.1, 0.1, 0.1, -1.0, 0.0, 0.0,
+	-0.1, 0.1, -0.1, -1.0, 0.0, 0.0,
+	-0.1, -0.1, -0.1, -1.0, 0.0, 0.0,
+	-0.1, -0.1, -0.1, -1.0, 0.0, 0.0,
+	-0.1, -0.1, 0.1, -1.0, 0.0, 0.0,
+	-0.1, 0.1, 0.1, -1.0, 0.0, 0.0,
 
-	0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
-	0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
-	0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
-	0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
-	0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
-	0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+	0.1, 0.1, 0.1, 1.0, 0.0, 0.0,
+	0.1, 0.1, -0.1, 1.0, 0.0, 0.0,
+	0.1, -0.1, -0.1, 1.0, 0.0, 0.0,
+	0.1, -0.1, -0.1, 1.0, 0.0, 0.0,
+	0.1, -0.1, 0.1, 1.0, 0.0, 0.0,
+	0.1, 0.1, 0.1, 1.0, 0.0, 0.0,
 
-	-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
-	0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
-	0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-	0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-	-0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-	-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+	-0.1, -0.1, -0.1, 0.0, -1.0, 0.0,
+	0.1, -0.1, -0.1, 0.0, -1.0, 0.0,
+	0.1, -0.1, 0.1, 0.0, -1.0, 0.0,
+	0.1, -0.1, 0.1, 0.0, -1.0, 0.0,
+	-0.1, -0.1, 0.1, 0.0, -1.0, 0.0,
+	-0.1, -0.1, -0.1, 0.0, -1.0, 0.0,
 
-	-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
-	0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
-	0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-	0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-	-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-	-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+	-0.1, 0.1, -0.1, 0.0, 1.0, 0.0,
+	0.1, 0.1, -0.1, 0.0, 1.0, 0.0,
+	0.1, 0.1, 0.1, 0.0, 1.0, 0.0,
+	0.1, 0.1, 0.1, 0.0, 1.0, 0.0,
+	-0.1, 0.1, 0.1, 0.0, 1.0, 0.0,
+	-0.1, 0.1, -0.1, 0.0, 1.0, 0.0,
 }
 
-var cubePositions = [][]float32{
-	{0.0, 0.0, -3.0},
-	{2.0, 5.0, -15.0},
-	{-1.5, -2.2, -2.5},
-	{-3.8, -2.0, -12.3},
-	{2.4, -0.4, -3.5},
-	{-1.7, 3.0, -7.5},
-	{1.3, -2.0, -2.5},
-	{1.5, 2.0, -2.5},
-	{1.5, 0.2, -1.5},
-	{-1.3, 1.0, -1.5},
-}
+// var cubePositions = [][]float32{
+// 	{0.0, 0.0, -30.0},
+// 	{2.0, 5.0, -15.0},
+// 	{-1.5, -2.2, -2.5},
+// 	{-3.8, -2.0, -12.3},
+// 	{2.4, -0.4, -3.5},
+// 	{-1.7, 3.0, -7.5},
+// 	{1.3, -2.0, -2.5},
+// 	{1.5, 2.0, -2.5},
+// 	{1.5, 0.2, -1.5},
+// 	{-1.3, 1.0, -1.5},
+// }
+
+const (
+	SizeX = 100
+	SizeZ = 100
+)
+
+var cubePositions [SizeX * SizeZ][3]float32
 
 func init() {
 	// GLFW event handling must be run on the main OS thread
@@ -78,6 +87,17 @@ func init() {
 }
 
 func main() {
+	var perlin = noiselib.DefaultPerlin()
+	start := time.Now()
+	for x := 0; x < SizeX; x++ {
+		for z := 0; z < SizeZ; z++ {
+			y := perlin.GetValue(float64(float32(x)/100.0), float64(float32(0)/100.0), float64(float32(z)/100.0))
+			cubePositions[x*100+z] = [3]float32{float32(x) / 5.0, float32(2 * y), float32(z) / 5.0}
+		}
+	}
+
+	fmt.Println(SizeX*SizeZ, "cubes generated, in", time.Now().Sub(start))
+
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to inifitialize glfw:", err)
 	}
@@ -182,7 +202,7 @@ func programLoop(window *win.Window) error {
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
 
-	camera := cam.NewFpsCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 1, 0}, -90, 0, window.InputManager())
+	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 45, 45, window.InputManager())
 
 	for !window.ShouldClose() {
 
@@ -204,9 +224,9 @@ func programLoop(window *win.Window) error {
 			100.0)
 
 		camTransform := camera.GetTransform()
-		lightPos := mgl32.Vec3{0.6, 1, 0.1}
+		lightPos := mgl32.Vec3{10, -5, 10}
 		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
-			mgl32.Scale3D(0.2, 0.2, 0.2))
+			mgl32.Scale3D(5, 5, 5))
 
 		program.Use()
 		gl.UniformMatrix4fv(program.GetUniformLocation("view"), 1, false, &camTransform[0])
@@ -218,24 +238,25 @@ func programLoop(window *win.Window) error {
 		// draw each cube after all coordinate system transforms are bound
 
 		// obj is colored, light is white
-		gl.Uniform3f(program.GetUniformLocation("objectColor"), 1.0, 0.5, 0.31)
+		gl.Uniform3f(program.GetUniformLocation("objectColor"), 0.0, 0.5, 0.0)
 		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 		gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
 
 		// cube rotation matrices
-		rotateX := (mgl32.Rotate3DX(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
-		rotateY := (mgl32.Rotate3DY(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
-		rotateZ := (mgl32.Rotate3DZ(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
+		// rotateX := (mgl32.Rotate3DX(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
+		// rotateY := (mgl32.Rotate3DY(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
+		// rotateZ := (mgl32.Rotate3DZ(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
 
 		for _, pos := range cubePositions {
 
 			// turn the cubes into rectangular prisms for more fun
 			worldTranslate := mgl32.Translate3D(pos[0], pos[1], pos[2])
-			worldTransform := worldTranslate.Mul4(
-				rotateX.Mul3(rotateY).Mul3(rotateZ).Mat4().Mul4(
-					mgl32.Scale3D(1.2, 1.2, 0.7),
-				),
-			)
+			worldTransform := worldTranslate
+			// .Mul4(
+			// 	rotateX.Mul3(rotateY).Mul3(rotateZ).Mat4().Mul4(
+			// 		mgl32.Scale3D(1.2, 1.2, 0.7),
+			// 	),
+			// )
 
 			gl.UniformMatrix4fv(program.GetUniformLocation("model"), 1, false,
 				&worldTransform[0])
