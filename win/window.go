@@ -4,15 +4,15 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/go-gl/gl/v4.1-core/gl"
+
 	"github.com/go-gl/glfw/v3.1/glfw"
 )
 
 type Window struct {
-	width  int
-	height int
-	glfw   *glfw.Window
-	title  string
-	vsync  bool
+	glfw  *glfw.Window
+	title string
+	vsync bool
 
 	inputManager  *InputManager
 	firstFrame    bool
@@ -22,6 +22,10 @@ type Window struct {
 
 func (w *Window) InputManager() *InputManager {
 	return w.inputManager
+}
+
+func resizeCallback(w *glfw.Window, width int, height int) {
+	gl.Viewport(0, 0, int32(width), int32(height))
 }
 
 // NewWindow returns a new window initialized
@@ -39,22 +43,22 @@ func NewWindow(width int, height int, title string, vsync bool) *Window {
 		glfw.SwapInterval(0)
 	}
 
-	gWindow.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
-
 	im := NewInputManager()
 
+	// uncomment this to disable cursor
+	// gWindow.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	// gWindow.SetCursorPosCallback(im.mouseCallback)
 	gWindow.SetKeyCallback(im.keyCallback)
-	gWindow.SetCursorPosCallback(im.mouseCallback)
+	gWindow.SetSizeCallback(resizeCallback)
 
 	return &Window{
-		width:        width,
-		height:       height,
 		title:        title,
 		glfw:         gWindow,
 		inputManager: im,
 		firstFrame:   true,
 		vsync:        vsync,
 	}
+
 }
 
 func (w *Window) Width() int {
