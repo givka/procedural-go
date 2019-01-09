@@ -52,16 +52,16 @@ func (c *FpsCamera) Update(dTime float64) {
 func (c *FpsCamera) updatePosition(dTime float64) {
 	adjustedSpeed := float32(dTime * c.moveSpeed)
 
-	if c.inputManager.IsActive(win.PLAYER_FORWARD) {
+	if c.inputManager.IsActive(win.PlayerForward) {
 		c.pos = c.pos.Add(c.front.Mul(adjustedSpeed))
 	}
-	if c.inputManager.IsActive(win.PLAYER_BACKWARD) {
+	if c.inputManager.IsActive(win.PlayerBackward) {
 		c.pos = c.pos.Sub(c.front.Mul(adjustedSpeed))
 	}
-	if c.inputManager.IsActive(win.PLAYER_LEFT) {
+	if c.inputManager.IsActive(win.PlayerLeft) {
 		c.pos = c.pos.Sub(c.front.Cross(c.up).Normalize().Mul(adjustedSpeed))
 	}
-	if c.inputManager.IsActive(win.PLAYER_RIGHT) {
+	if c.inputManager.IsActive(win.PlayerRight) {
 		c.pos = c.pos.Add(c.front.Cross(c.up).Normalize().Mul(adjustedSpeed))
 	}
 }

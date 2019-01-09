@@ -8,12 +8,13 @@ import (
 // Action is a configurable abstraction of a key press
 type Action int
 
+// Action enum
 const (
-	PLAYER_FORWARD  Action = iota
-	PLAYER_BACKWARD Action = iota
-	PLAYER_LEFT     Action = iota
-	PLAYER_RIGHT    Action = iota
-	PROGRAM_QUIT    Action = iota
+	PlayerForward  Action = iota
+	PlayerBackward Action = iota
+	PlayerLeft     Action = iota
+	PlayerRight    Action = iota
+	ProgramQuit    Action = iota
 )
 
 type InputManager struct {
@@ -29,11 +30,11 @@ type InputManager struct {
 
 func NewInputManager() *InputManager {
 	actionToKeyMap := map[Action]glfw.Key{
-		PLAYER_FORWARD:  glfw.KeyW,
-		PLAYER_BACKWARD: glfw.KeyS,
-		PLAYER_LEFT:     glfw.KeyA,
-		PLAYER_RIGHT:    glfw.KeyD,
-		PROGRAM_QUIT:    glfw.KeyEscape,
+		PlayerForward:  glfw.KeyW,
+		PlayerBackward: glfw.KeyS,
+		PlayerLeft:     glfw.KeyA,
+		PlayerRight:    glfw.KeyD,
+		ProgramQuit:    glfw.KeyEscape,
 	}
 
 	return &InputManager{

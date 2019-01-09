@@ -85,7 +85,7 @@ func (w *Window) StartFrame() {
 	// poll for UI window events
 	glfw.PollEvents()
 
-	if w.inputManager.IsActive(PROGRAM_QUIT) {
+	if w.inputManager.IsActive(ProgramQuit) {
 		w.glfw.SetShouldClose(true)
 	}
 
