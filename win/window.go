@@ -27,7 +27,9 @@ func (w *Window) InputManager() *InputManager {
 }
 
 func resizeCallback(w *glfw.Window, width int, height int) {
-	gl.Viewport(0, 0, int32(width), int32(height))
+	// hack for HiDPI displays
+	ww, hh := w.GetFramebufferSize()
+	gl.Viewport(0, 0, int32(ww), int32(hh))
 }
 
 // NewWindow returns a new window initialized
