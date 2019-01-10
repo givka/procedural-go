@@ -9,6 +9,7 @@ import (
 	"./cam"
 	"./gfx"
 	"./win"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -89,6 +90,8 @@ func init() {
 func main() {
 	var perlin = noiselib.DefaultPerlin()
 	start := time.Now()
+	perlin.Seed = int(time.Now().Unix())
+
 	for x := 0; x < SizeX; x++ {
 		for z := 0; z < SizeZ; z++ {
 			y := perlin.GetValue(float64(float32(x)/100.0), float64(float32(0)/100.0), float64(float32(z)/100.0))
@@ -128,6 +131,12 @@ func main() {
  * Creates the Vertex Array Object for a triangle.
  * indices is leftover from earlier samples and not used here.
  */
+ func createVAOFromMesh(m gfx.Mesh ) uint32 {
+//	var vertices []float32
+//	var indices []uint32
+
+	return 0
+ }
 func createVAO(vertices []float32, indices []uint32) uint32 {
 
 	var VAO uint32
@@ -167,6 +176,21 @@ func createVAO(vertices []float32, indices []uint32) uint32 {
 }
 
 func programLoop(window *win.Window) error {
+
+	m := gfx.Mesh{}
+
+	v0 := gfx.Vertex{Position : mgl32.Vec3{1.0, 1.0, 1.0}}
+	v1 := gfx.Vertex{Position : mgl32.Vec3{1.0, 1.0, 1.0}}
+	v2 := gfx.Vertex{Position : mgl32.Vec3{1.0, 1.0, 1.0}}
+
+	t0 := gfx.TriangleConnectivity{0, 1, 2}
+
+	m.Vertices = append(m.Vertices, v0)
+	m.Vertices = append(m.Vertices, v1)
+	m.Vertices = append(m.Vertices, v2)
+
+
+	m.Connectivity = append(m.Connectivity, t0)
 
 	// the linked shader program determines how the data will be rendered
 	vertShader, err := gfx.NewShaderFromFile("shaders/phong.vert", gl.VERTEX_SHADER)
@@ -229,6 +253,8 @@ func programLoop(window *win.Window) error {
 			mgl32.Scale3D(5, 5, 5))
 
 		program.Use()
+
+		//DEBUT RENDER
 		gl.UniformMatrix4fv(program.GetUniformLocation("view"), 1, false, &camTransform[0])
 		gl.UniformMatrix4fv(program.GetUniformLocation("project"), 1, false,
 			&projectTransform[0])
@@ -249,19 +275,12 @@ func programLoop(window *win.Window) error {
 
 		for _, pos := range cubePositions {
 
-			// turn the cubes into rectangular prisms for more fun
 			worldTranslate := mgl32.Translate3D(pos[0], pos[1], pos[2])
 			worldTransform := worldTranslate
-			// .Mul4(
-			// 	rotateX.Mul3(rotateY).Mul3(rotateZ).Mat4().Mul4(
-			// 		mgl32.Scale3D(1.2, 1.2, 0.7),
-			// 	),
-			// )
 
-			gl.UniformMatrix4fv(program.GetUniformLocation("model"), 1, false,
-				&worldTransform[0])
-
-			gl.DrawArrays(gl.TRIANGLES, 0, 36)
+			m := gfx.Model{VAO: VAO, NbTriangles: 36, Program: program, Transform: worldTransform}
+			gfx.Render(m, camTransform, projectTransform)
+			//gl.DrawArrays(gl.TRIANGLES, 0, 36)
 		}
 		gl.BindVertexArray(0)
 
