@@ -1,6 +1,7 @@
 package ter
 
 import (
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
 )
@@ -9,7 +10,7 @@ type HeightMap struct {
 	ChunkSize uint32
 	NbOctaves uint32
 	Chunks map[mgl32.Vec2]*HeightMapChunk
-	perlin noiselib.Perlin
+	Perlin noiselib.Perlin
 }
 
 type HeightMapChunk struct{
@@ -32,22 +33,26 @@ func ChunkToWorldCoordinates(hmap HeightMap, chunk mgl32.Vec2) mgl32.Vec2{
 }
 
 func generateChunk(heightMap HeightMap, position mgl32.Vec2) *HeightMapChunk{
-	chunk := new(HeightMapChunk{Size: heightMap.ChunkSize, Position: position})
+	chunk := HeightMapChunk{Size: heightMap.ChunkSize, Position: position}
+	chunk.Map = make([]float32, chunk.Size * chunk.Size)
 
 	posX := int32(position.X())
 	posZ := int32(position.Y())
 
-	for x := posX; x < posX + int32(*chunk.Size); x++{
+	for x := posX; x < posX + int32(chunk.Size); x++{
 		for z := posZ; z < posZ + int32(chunk.Size); z++ {
-			chunk.Map[x - posX + (z - posZ) * int32(chunk.Size)] = float32(heightMap.perlin.GetValue(float64(x), 0, float64(z)))
+			index := x - posX + (z - posZ) * int32(chunk.Size)
+			chunk.Map[index] = float32(heightMap.Perlin.GetValue(float64(x)/100.0, 0, float64(z)/100.0))
+			fmt.Println(x, z, index, chunk.Map[index])
 		}
 	}
 
-	return chunk
+	return &chunk
 }
 
 func GetChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
 	if heightMap.Chunks == nil{
+		//check if the map has been initialized
 		heightMap.Chunks = make(map[mgl32.Vec2]*HeightMapChunk)
 	}
 	//check if chunk exists
