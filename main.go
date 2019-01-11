@@ -21,6 +21,10 @@ var hmap ter.HeightMap
 
 var chunks []*ter.HeightMapChunk
 
+var NBChunks uint = 4
+// PERLIN CONFIG VARS
+// TODO: MOVE TO JSON AND ADD GUI
+
 func init() {
 	// GLFW event handling must be run on the main OS thread
 	runtime.LockOSThread()
@@ -49,11 +53,20 @@ func main() {
 
 	var perlin = noiselib.DefaultPerlin()
 	perlin.Seed = int(time.Now().Unix())
+	perlin.OctaveCount = 10
+	perlin.Frequency = 0.1
+	perlin.Lacunarity  = 2.0
+	perlin.Persistence = 0.5
+	perlin.Quality     = noiselib.QualitySTD
 
-	hmap = ter.HeightMap{ChunkNBPoints: 16, ChunkWorldSize: 10, NbOctaves:4}
+	hmap = ter.HeightMap{
+		ChunkNBPoints: 128,
+		ChunkWorldSize: 32,
+		NbOctaves:4,
+	}
 	hmap.Perlin = perlin
 
-	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, 8)
+	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, NBChunks)
 
 	err := programLoop(window)
 	if err != nil {
@@ -109,7 +122,7 @@ func programLoop(window *win.Window) error {
 		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			fmt.Println("New Chunk", currentChunk)
-			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, 8)
+			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, NBChunks)
 			for _, chunk := range chunks{
 				chunk.Model.Program = program
 			}

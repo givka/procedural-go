@@ -20,7 +20,7 @@ void main()
 	// see light-casters sample for the proper way
 	float distIntensityDecay = 1.0f / pow(distToLight, 2);
 
-	float ambientStrength = 0.2f;
+	float ambientStrength = 0.5f;
 	vec3 ambientLight = ambientStrength * lightColor;
 
 	vec3 norm = normalize(Normal);

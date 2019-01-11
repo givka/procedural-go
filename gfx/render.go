@@ -6,7 +6,7 @@ import (
 import "github.com/go-gl/gl/v4.1-core/gl"
 
 func Render(m Model, view mgl32.Mat4, project mgl32.Mat4) {
-	lightPos := mgl32.Vec3{10, -5, 10} //temporary
+	lightPos := mgl32.Vec3{10, -10, 10} //temporary
 
 	program := m.Program
 

@@ -47,7 +47,8 @@ func generateChunk(heightMap *HeightMap, position [2]int) *HeightMapChunk{
 			index := x + z * int(chunk.NBPoints+1)
 			posX := float32(position[0]) * float32(chunk.WorldSize) + float32(x) * step
 			posZ := float32(position[1]) * float32(chunk.WorldSize) + float32(z) * step
-			chunk.Map[index] = float32(heightMap.Perlin.GetValue(float64(posX), 0, float64(posZ)))
+			chunk.Map[index] = float32(
+				heightMap.Perlin.GetValue(float64(posX), 0, float64(posZ)) )//+
 		}
 	}
 	mesh := CreateChunkPolyMesh(chunk)
@@ -81,7 +82,18 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 	for x:=0; x < size+1; x++{
 		for z:=0; z < size+1; z++ {
 			position := mgl32.Vec3{float32(x) * step, chunk.Map[x + z * (size+1)], float32(z) * step}
-			normal := mgl32.Vec3{0.0, -1.0, 0.0}
+			//compute normal
+			var up float32 = 0.0
+			var down float32 = 0.0
+			var left float32 = 0.0
+			var right float32 = 0.0
+			if z > 0 		{up 	= chunk.Map[x + (z-1) * (size+1)]}
+			if z < size		{down	= chunk.Map[x + (z+1) * (size+1)]}
+			if x > 0 		{left 	= chunk.Map[x - 1 + z * (size+1)]}
+			if x < size 	{right	= chunk.Map[x + 1 + z * (size+1)]}
+
+			normal := mgl32.Vec3{left - right, 2, up - down}
+			normal = normal.Normalize()
 			color := mgl32.Vec4{0.0, 0.5, 0.0, 1.0}
 			texture := mgl32.Vec2{0.0, 0.0}
 
@@ -104,6 +116,7 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 			mesh.Connectivity = append(mesh.Connectivity, tri2)
 		}
 	}
+
 	return mesh
 }
 
