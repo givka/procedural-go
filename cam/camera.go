@@ -108,3 +108,7 @@ func (c *FpsCamera) GetTransform() mgl32.Mat4 {
 		c.up.X(), c.up.Y(), c.up.Z(),
 	)
 }
+
+func (c *FpsCamera) Position() mgl32.Vec3 {
+	return c.pos
+}

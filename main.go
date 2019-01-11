@@ -68,12 +68,12 @@ func getCurrentChunkFromCam(camera cam.FpsCamera, hmap *ter.HeightMap) [2]int{
 }
 func programLoop(window *win.Window) error {
 	// the linked shader program determines how the data will be rendered
-	vertShader, err := gfx.NewShaderFromFile("shaders/phong.vert", gl.VERTEX_SHADER)
+	vertShader, err := gfx.NewShaderFromFile("shaders/shader.vert", gl.VERTEX_SHADER)
 	if err != nil {
 		return err
 	}
 
-	fragShader, err := gfx.NewShaderFromFile("shaders/phong.frag", gl.FRAGMENT_SHADER)
+	fragShader, err := gfx.NewShaderFromFile("shaders/shader.frag", gl.FRAGMENT_SHADER)
 	if err != nil {
 		return err
 	}
@@ -136,6 +136,7 @@ func programLoop(window *win.Window) error {
 /*		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
 			mgl32.Scale3D(5, 5, 5))
 */
+
 		program.Use()
 
 		//DEBUT RENDER
@@ -145,13 +146,14 @@ func programLoop(window *win.Window) error {
 		// obj is colored, light is white
 		gl.Uniform3f(program.GetUniformLocation("objectColor"), 0.0, 0.5, 0.0)
 		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
-		gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
+		gl.Uniform3f(program.GetUniformLocation("lightPos"), camera.Position().X(), camera.Position().Y(), camera.Position().Z())
 
 	//	gfx.Render(model, camTransform, projectTransform)
 		for _, chunk := range chunks{
 			gfx.Render(*(chunk.Model), camTransform, projectTransform)
 		}
 		gl.BindVertexArray(0)
+
 		// end of draw loop
 	}
 
