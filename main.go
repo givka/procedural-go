@@ -1,18 +1,19 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"runtime"
+	"time"
+
 	"./cam"
 	"./gfx"
 	"./ter"
 	"./win"
-	"fmt"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
-	"log"
-	"runtime"
-	"time"
 )
 
 var mesh gfx.Mesh
@@ -64,6 +65,7 @@ func main() {
 		ChunkWorldSize: 32,
 		NbOctaves:4,
 	}
+
 	hmap.Perlin = perlin
 
 	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, NBChunks)
@@ -74,11 +76,12 @@ func main() {
 	}
 }
 
-func getCurrentChunkFromCam(camera cam.FpsCamera, hmap *ter.HeightMap) [2]int{
+func getCurrentChunkFromCam(camera cam.FpsCamera, hmap *ter.HeightMap) [2]int {
 	x := camera.Position().X()
 	z := camera.Position().Z()
 	return ter.WorldToChunkCoordinates(hmap, mgl32.Vec2{x, z})
 }
+
 func programLoop(window *win.Window) error {
 	// the linked shader program determines how the data will be rendered
 	vertShader, err := gfx.NewShaderFromFile("shaders/shader.vert", gl.VERTEX_SHADER)
@@ -97,18 +100,7 @@ func programLoop(window *win.Window) error {
 	}
 	defer program.Delete()
 
-	/*lightFragShader, err := gfx.NewShaderFromFile("shaders/light.frag", gl.FRAGMENT_SHADER)
-	if err != nil {
-		return err
-	}
-
-	// special shader program so that lights themselves are not affected by lighting
-	lightProgram, err := gfx.NewProgram(vertShader, lightFragShader)
-	if err != nil {
-		return err
-	}*/
-
-	for _, chunk := range chunks{
+	for _, chunk := range chunks {
 		chunk.Model.Program = program
 	}
 
@@ -122,8 +114,10 @@ func programLoop(window *win.Window) error {
 		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			fmt.Println("New Chunk", currentChunk)
+
 			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, NBChunks)
 			for _, chunk := range chunks{
+
 				chunk.Model.Program = program
 			}
 		}
@@ -139,15 +133,13 @@ func programLoop(window *win.Window) error {
 
 		// creates perspective
 		fov := float32(90.0)
-		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov),
-			float32(window.Width())/float32(window.Height()),
-			0.1,
-			100.0)
+		far := float32(100.0)
+		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov), float32(window.Width())/float32(window.Height()), 0.1, far)
 
 		camTransform := camera.GetTransform()
-/*		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
-			mgl32.Scale3D(5, 5, 5))
-*/
+		/*		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
+				mgl32.Scale3D(5, 5, 5))
+		*/
 
 		program.Use()
 
@@ -160,9 +152,9 @@ func programLoop(window *win.Window) error {
 		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 		gl.Uniform3f(program.GetUniformLocation("lightPos"), camera.Position().X(), camera.Position().Y(), camera.Position().Z())
 
-	//	gfx.Render(model, camTransform, projectTransform)
-		for _, chunk := range chunks{
-			gfx.Render(*(chunk.Model), camTransform, projectTransform)
+		//	gfx.Render(model, camTransform, projectTransform)
+		for _, chunk := range chunks {
+			gfx.Render(*(chunk.Model), camTransform, projectTransform, camera.Position())
 		}
 		gl.BindVertexArray(0)
 

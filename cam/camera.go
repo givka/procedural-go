@@ -29,7 +29,7 @@ type FpsCamera struct {
 
 func NewFpsCamera(position, worldUp mgl32.Vec3, yaw, pitch float64, im *win.InputManager) *FpsCamera {
 	cam := FpsCamera{
-		moveSpeed:         5.00,
+		moveSpeed:         20.0,
 		cursorSensitivity: 0.05,
 		pitch:             pitch,
 		yaw:               yaw,
