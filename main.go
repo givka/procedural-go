@@ -62,8 +62,8 @@ func main() {
 }
 
 func getCurrentChunkFromCam(camera cam.FpsCamera, hmap *ter.HeightMap) [2]int{
-	x := camera.Pos.X()
-	z := camera.Pos.Z()
+	x := camera.Position().X()
+	z := camera.Position().Z()
 	return ter.WorldToChunkCoordinates(hmap, mgl32.Vec2{x, z})
 }
 func programLoop(window *win.Window) error {
@@ -109,7 +109,7 @@ func programLoop(window *win.Window) error {
 		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			fmt.Println("New Chunk", currentChunk)
-			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Pos.X(), camera.Pos.Z()}, 8)
+			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, 8)
 			for _, chunk := range chunks{
 				chunk.Model.Program = program
 			}
@@ -132,7 +132,6 @@ func programLoop(window *win.Window) error {
 			100.0)
 
 		camTransform := camera.GetTransform()
-		lightPos := mgl32.Vec3{10, -5, 10}
 /*		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
 			mgl32.Scale3D(5, 5, 5))
 */
