@@ -1,7 +1,7 @@
 package ter
 
 import (
-	"fmt"
+	"../gfx"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
 )
@@ -43,7 +43,6 @@ func generateChunk(heightMap HeightMap, position mgl32.Vec2) *HeightMapChunk{
 		for z := posZ; z < posZ + int32(chunk.Size); z++ {
 			index := x - posX + (z - posZ) * int32(chunk.Size)
 			chunk.Map[index] = float32(heightMap.Perlin.GetValue(float64(x)/100.0, 0, float64(z)/100.0))
-			fmt.Println(x, z, index, chunk.Map[index])
 		}
 	}
 
@@ -62,3 +61,43 @@ func GetChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
 	}
 	return heightMap.Chunks[position]
 }
+
+func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
+	mesh := gfx.Mesh{}
+	size := int(chunk.Size)
+
+	//first add all vertices
+	for x:=0; x < size; x++{
+		for z:=0; z < size; z++ {
+			position := mgl32.Vec3{float32(x) + chunk.Position.X(), chunk.Map[x + z * size], float32(z) + chunk.Position.Y()}
+			normal := mgl32.Vec3{0.0, -1.0, 0.0}
+			color := mgl32.Vec4{1.0, 0.0, 0.0, 1.0}
+			texture := mgl32.Vec2{0.0, 0.0}
+
+			v := gfx.Vertex{
+				Position: 	position,
+				Normal: 	normal,
+				Color:		color,
+				Texture: 	texture}
+			mesh.Vertices = append(mesh.Vertices, v)
+		}
+	}
+
+	//then build triangles
+	for x:=0; x < size - 1; x++ {
+		for z := 0; z < size - 1; z++ {
+			i := uint32(x) + chunk.Size * uint32(z)
+			tri1 := gfx.TriangleConnectivity{i, i + 1, i + uint32(chunk.Size)};
+			tri2 := gfx.TriangleConnectivity{i + 1, i + uint32(chunk.Size) + 1, i + uint32(chunk.Size)};
+			mesh.Connectivity = append(mesh.Connectivity, tri1)
+			mesh.Connectivity = append(mesh.Connectivity, tri2)
+		}
+	}
+	return mesh
+}
+
+/*
+func createChunkCubeModel(chunk HeightMapChunk) gfx.Model{
+
+}
+*/
