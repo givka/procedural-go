@@ -2,6 +2,7 @@ package ter
 
 import (
 	"../gfx"
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
 )
@@ -20,19 +21,19 @@ type HeightMapChunk struct{
 }
 
 //relative coordinates
-func WorldToChunkCoordinates(hmap HeightMap, world mgl32.Vec2) mgl32.Vec2{
+func WorldToChunkCoordinates(hmap *HeightMap, world mgl32.Vec2) mgl32.Vec2{
 	x := int32(world.X()) / int32(hmap.ChunkSize)
 	y := int32(world.Y()) / int32(hmap.ChunkSize)
 	return mgl32.Vec2{float32(x), float32(y)}
 }
 
-func ChunkToWorldCoordinates(hmap HeightMap, chunk mgl32.Vec2) mgl32.Vec2{
+func ChunkToWorldCoordinates(hmap *HeightMap, chunk mgl32.Vec2) mgl32.Vec2{
 	x := int32(chunk.X()) * int32(hmap.ChunkSize)
 	y := int32(chunk.Y()) * int32(hmap.ChunkSize)
 	return mgl32.Vec2{float32(x), float32(y)}
 }
 
-func generateChunk(heightMap HeightMap, position mgl32.Vec2) *HeightMapChunk{
+func generateChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
 	chunk := HeightMapChunk{Size: heightMap.ChunkSize, Position: position}
 	chunk.Map = make([]float32, chunk.Size * chunk.Size)
 
@@ -57,7 +58,7 @@ func GetChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
 	//check if chunk exists
 	if heightMap.Chunks[position] == nil {
 		//create new chunk
-		heightMap.Chunks[position] = generateChunk(*heightMap, position)
+		heightMap.Chunks[position] = generateChunk(heightMap, position)
 	}
 	return heightMap.Chunks[position]
 }
@@ -94,6 +95,23 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 		}
 	}
 	return mesh
+}
+
+func GetSurroundingChunks(hmap *HeightMap, worldPosition mgl32.Vec2, size uint) []*HeightMapChunk{
+	chunkPosition := WorldToChunkCoordinates(hmap, worldPosition)
+	startPosition := chunkPosition.Sub(mgl32.Vec2{float32(size / 2), float32(size/2)})
+	endPosition := chunkPosition.Add(mgl32.Vec2{float32(size / 2), float32(size/2)})
+
+	chunks := []*HeightMapChunk{}
+
+	fmt.Println(startPosition, endPosition)
+	for x := startPosition.X(); x < endPosition.X(); x++{
+		for y:= startPosition.Y(); y < endPosition.Y(); y++{
+			key := mgl32.Vec2{x, y}
+			chunks = append(chunks, GetChunk(hmap, key))
+		}
+	}
+	return chunks
 }
 
 /*
