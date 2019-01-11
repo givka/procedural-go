@@ -11,32 +11,32 @@ type HeightMap struct {
 	ChunkNBPoints  uint32
 	ChunkWorldSize uint32
 	NbOctaves      uint32
-	Chunks         map[mgl32.Vec2]*HeightMapChunk
+	Chunks         map[[2]int]*HeightMapChunk
 	Perlin         noiselib.Perlin
 }
 
 type HeightMapChunk struct{
 	NBPoints  uint32
 	WorldSize uint32
-	Position  mgl32.Vec2
+	Position  [2]int
 	Map       []float32
 	Model     *gfx.Model
 }
 
 //relative coordinates
-func WorldToChunkCoordinates(hmap *HeightMap, world mgl32.Vec2) mgl32.Vec2{
-	x := int32(world.X()) / int32(hmap.ChunkWorldSize)
-	y := int32(world.Y()) / int32(hmap.ChunkWorldSize)
+func WorldToChunkCoordinates(hmap *HeightMap, world mgl32.Vec2) [2]int{
+	x := int(world.X()) / int(hmap.ChunkWorldSize)
+	y := int(world.Y()) / int(hmap.ChunkWorldSize)
+	return [2]int{x, y}
+}
+
+func ChunkToWorldCoordinates(hmap *HeightMap, chunk [2]int) mgl32.Vec2{
+	x := int(chunk[0]) * int(hmap.ChunkWorldSize)
+	y := int(chunk[1]) * int(hmap.ChunkWorldSize)
 	return mgl32.Vec2{float32(x), float32(y)}
 }
 
-func ChunkToWorldCoordinates(hmap *HeightMap, chunk mgl32.Vec2) mgl32.Vec2{
-	x := int32(chunk.X()) * int32(hmap.ChunkWorldSize)
-	y := int32(chunk.Y()) * int32(hmap.ChunkWorldSize)
-	return mgl32.Vec2{float32(x), float32(y)}
-}
-
-func generateChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
+func generateChunk(heightMap *HeightMap, position [2]int) *HeightMapChunk{
 	chunk := HeightMapChunk{NBPoints: heightMap.ChunkNBPoints, WorldSize: heightMap.ChunkWorldSize, Position: position}
 	chunk.Map = make([]float32, (chunk.NBPoints+1)*(chunk.NBPoints+1))
 
@@ -45,23 +45,23 @@ func generateChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
 	for x := 0; x < int(chunk.NBPoints) + 1; x ++{
 		for z := 0; z < int(chunk.NBPoints) + 1; z++{
 			index := x + z * int(chunk.NBPoints+1)
-			posX := position.X() * float32(chunk.WorldSize) + float32(x) * step
-			posZ := position.Y() * float32(chunk.WorldSize) + float32(z) * step
+			posX := float32(position[0]) * float32(chunk.WorldSize) + float32(x) * step
+			posZ := float32(position[1]) * float32(chunk.WorldSize) + float32(z) * step
 			chunk.Map[index] = float32(heightMap.Perlin.GetValue(float64(posX), 0, float64(posZ)))
 		}
 	}
 	mesh := CreateChunkPolyMesh(chunk)
 	model := gfx.BuildModel(mesh)
-	translate := mgl32.Translate3D(position.X()*float32(chunk.WorldSize), 0, position.Y()*float32(chunk.WorldSize))
+	translate := mgl32.Translate3D(float32(position[0])*float32(chunk.WorldSize), 0, float32(position[1])*float32(chunk.WorldSize))
 	model.Transform = translate
 	chunk.Model = &model
 	return &chunk
 }
 
-func GetChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
+func GetChunk(heightMap *HeightMap, position [2]int) *HeightMapChunk{
 	if heightMap.Chunks == nil{
 		//check if the map has been initialized
-		heightMap.Chunks = make(map[mgl32.Vec2]*HeightMapChunk)
+		heightMap.Chunks = make(map[[2]int]*HeightMapChunk)
 	}
 	//check if chunk exists
 	if heightMap.Chunks[position] == nil {
@@ -109,15 +109,16 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 
 func GetSurroundingChunks(hmap *HeightMap, worldPosition mgl32.Vec2, size uint) []*HeightMapChunk{
 	chunkPosition := WorldToChunkCoordinates(hmap, worldPosition)
-	startPosition := chunkPosition.Sub(mgl32.Vec2{float32(size / 2), float32(size/2)})
-	endPosition := chunkPosition.Add(mgl32.Vec2{float32(size / 2), float32(size/2)})
+
+ 	startPosition := [2]int{chunkPosition[0] - int(size/2), chunkPosition[1] - int(size/2)}
+	endPosition := [2]int{chunkPosition[0] + int(size/2), chunkPosition[1] + int(size/2)}
 
 	chunks := []*HeightMapChunk{}
 
 	fmt.Println(startPosition, endPosition)
-	for x := startPosition.X(); x < endPosition.X(); x++{
-		for y:= startPosition.Y(); y < endPosition.Y(); y++{
-			key := mgl32.Vec2{x, y}
+	for x := startPosition[0]; x < endPosition[0]; x++{
+		for y:= startPosition[1]; y < endPosition[1]; y++{
+			key := [2]int{x, y}
 			chunks = append(chunks, GetChunk(hmap, key))
 		}
 	}
