@@ -94,7 +94,7 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh {
 			if x > 0 		{left 	= chunk.Map[x - 1 + z * (size+1)]}
 			if x < size 	{right	= chunk.Map[x + 1 + z * (size+1)]}
 
-			normal := mgl32.Vec3{left - right, 2, up - down}
+			normal := mgl32.Vec3{right - left, -2, down - up}
 			normal = normal.Normalize()
 
 			color := mgl32.Vec4{0.0, 0.5, 0.0, 1.0}

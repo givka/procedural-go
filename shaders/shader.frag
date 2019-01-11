@@ -11,7 +11,7 @@ uniform vec3 lightColor;
 void main()
 {
 	// affects diffuse and specular lighting
-	float lightPower = 50.0f;
+	float lightPower = 1.0f;
 
 	// diffuse and specular intensity are affected by the amount of light they get based on how
 	// far they are from a light source (inverse square of distance)
@@ -20,7 +20,7 @@ void main()
 	// see light-casters sample for the proper way
 	float distIntensityDecay = 1.0f / pow(distToLight, 2);
 
-	float ambientStrength = 0.5f;
+	float ambientStrength = 0.3f;
 	vec3 ambientLight = ambientStrength * lightColor;
 
 	vec3 norm = normalize(Normal);
@@ -29,9 +29,9 @@ void main()
 
 	// diffuse light is greatest when surface is perpendicular to light (dot product)
 	vec3 diffuse = lightNormalDiff * lightColor;
-	vec3 diffuseLight = lightPower * diffuse * distIntensityDecay * lightColor;
+	vec3 diffuseLight = lightPower * diffuse */* distIntensityDecay **/ lightColor;
 
-	float specularStrength = 1.0f;
+	float specularStrength = 10.0f;
 	int shininess = 64;
 	vec3 viewPos = vec3(0.0f, 0.0f, 0.0f);
 	vec3 dirToView = normalize(viewPos - FragPos);
