@@ -3,8 +3,9 @@ package main
 import (
 	"./cam"
 	"./gfx"
-	"./win"
 	"./ter"
+	"./win"
+	"fmt"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -16,6 +17,7 @@ import (
 
 var mesh gfx.Mesh
 var model gfx.Model
+var hmap ter.HeightMap
 
 var chunks []*ter.HeightMapChunk
 
@@ -48,10 +50,10 @@ func main() {
 	var perlin = noiselib.DefaultPerlin()
 	perlin.Seed = int(time.Now().Unix())
 
-	hmap := ter.HeightMap{ChunkNBPoints: 16, ChunkWorldSize: 10, NbOctaves:4}
+	hmap = ter.HeightMap{ChunkNBPoints: 16, ChunkWorldSize: 10, NbOctaves:4}
 	hmap.Perlin = perlin
 
-	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, 2)
+	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, 8)
 
 	err := programLoop(window)
 	if err != nil {
@@ -59,6 +61,11 @@ func main() {
 	}
 }
 
+func getCurrentChunkFromCam(camera cam.FpsCamera, hmap *ter.HeightMap) [2]int{
+	x := camera.Pos.X()
+	z := camera.Pos.Z()
+	return ter.WorldToChunkCoordinates(hmap, mgl32.Vec2{x, z})
+}
 func programLoop(window *win.Window) error {
 	// the linked shader program determines how the data will be rendered
 	vertShader, err := gfx.NewShaderFromFile("shaders/phong.vert", gl.VERTEX_SHADER)
@@ -97,8 +104,16 @@ func programLoop(window *win.Window) error {
 
 	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 45, 45, window.InputManager())
 
+	currentChunk := getCurrentChunkFromCam(*camera, &hmap)
 	for !window.ShouldClose() {
-
+		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
+			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
+			fmt.Println("New Chunk", currentChunk)
+			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Pos.X(), camera.Pos.Z()}, 8)
+			for _, chunk := range chunks{
+				chunk.Model.Program = program
+			}
+		}
 		// swaps in last buffer, polls for window events, and generally sets up for a new render frame
 		window.StartFrame()
 
