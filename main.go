@@ -149,12 +149,12 @@ func createVAO(vertices []float32, indices []uint32) uint32 {
 func programLoop(window *win.Window) error {
 
 	// the linked shader program determines how the data will be rendered
-	vertShader, err := gfx.NewShaderFromFile("shaders/phong.vert", gl.VERTEX_SHADER)
+	vertShader, err := gfx.NewShaderFromFile("shaders/shader.vert", gl.VERTEX_SHADER)
 	if err != nil {
 		return err
 	}
 
-	fragShader, err := gfx.NewShaderFromFile("shaders/phong.frag", gl.FRAGMENT_SHADER)
+	fragShader, err := gfx.NewShaderFromFile("shaders/shader.frag", gl.FRAGMENT_SHADER)
 	if err != nil {
 		return err
 	}
@@ -165,19 +165,7 @@ func programLoop(window *win.Window) error {
 	}
 	defer program.Delete()
 
-	lightFragShader, err := gfx.NewShaderFromFile("shaders/light.frag", gl.FRAGMENT_SHADER)
-	if err != nil {
-		return err
-	}
-
-	// special shader program so that lights themselves are not affected by lighting
-	lightProgram, err := gfx.NewProgram(vertShader, lightFragShader)
-	if err != nil {
-		return err
-	}
-
 	VAO := createVAO(cubeVertices, nil)
-	lightVAO := createVAO(cubeVertices, nil)
 
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
@@ -204,9 +192,6 @@ func programLoop(window *win.Window) error {
 			100.0)
 
 		camTransform := camera.GetTransform()
-		lightPos := mgl32.Vec3{0.6, 1, 0.1}
-		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
-			mgl32.Scale3D(0.2, 0.2, 0.2))
 
 		program.Use()
 		gl.UniformMatrix4fv(program.GetUniformLocation("view"), 1, false, &camTransform[0])
@@ -220,7 +205,7 @@ func programLoop(window *win.Window) error {
 		// obj is colored, light is white
 		gl.Uniform3f(program.GetUniformLocation("objectColor"), 1.0, 0.5, 0.31)
 		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
-		gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
+		gl.Uniform3f(program.GetUniformLocation("lightPos"), camera.Position().X(), camera.Position().Y(), camera.Position().Z())
 
 		// cube rotation matrices
 		rotateX := (mgl32.Rotate3DX(mgl32.DegToRad(-60 * float32(glfw.GetTime()))))
@@ -242,17 +227,6 @@ func programLoop(window *win.Window) error {
 
 			gl.DrawArrays(gl.TRIANGLES, 0, 36)
 		}
-		gl.BindVertexArray(0)
-
-		// Draw the light obj after the other boxes using its separate shader program
-		// this means that we must re-bind any uniforms
-		lightProgram.Use()
-		gl.BindVertexArray(lightVAO)
-		gl.UniformMatrix4fv(lightProgram.GetUniformLocation("model"), 1, false, &lightTransform[0])
-		gl.UniformMatrix4fv(lightProgram.GetUniformLocation("view"), 1, false, &camTransform[0])
-		gl.UniformMatrix4fv(lightProgram.GetUniformLocation("project"), 1, false, &projectTransform[0])
-		gl.DrawArrays(gl.TRIANGLES, 0, 36)
-
 		gl.BindVertexArray(0)
 
 		// end of draw loop
