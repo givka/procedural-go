@@ -48,11 +48,8 @@ func main() {
 	var perlin = noiselib.DefaultPerlin()
 	perlin.Seed = int(time.Now().Unix())
 
-	hmap := ter.HeightMap{ChunkNBPoints: 16, ChunkWorldSize: 8, NbOctaves:4}
+	hmap := ter.HeightMap{ChunkNBPoints: 16, ChunkWorldSize: 10, NbOctaves:4}
 	hmap.Perlin = perlin
-	chunk := ter.GetChunk(&hmap, mgl32.Vec2{0.0, 0.0})
-
-	mesh = ter.CreateChunkPolyMesh(*chunk)
 
 	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, 2)
 
@@ -94,9 +91,6 @@ func programLoop(window *win.Window) error {
 	for _, chunk := range chunks{
 		chunk.Model.Program = program
 	}
-
-	model = gfx.BuildModel(mesh)
-	model.Program = program
 
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
