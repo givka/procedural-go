@@ -1,23 +1,23 @@
 package main
 
 import (
-	"log"
-	"runtime"
-	"time"
-
 	"./cam"
 	"./gfx"
 	"./win"
 	"./ter"
-
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
+	"log"
+	"runtime"
+	"time"
 )
 
 var mesh gfx.Mesh
 var model gfx.Model
+
+var chunks []*ter.HeightMapChunk
 
 func init() {
 	// GLFW event handling must be run on the main OS thread
@@ -25,15 +25,6 @@ func init() {
 }
 
 func main() {
-	var perlin = noiselib.DefaultPerlin()
-	perlin.Seed = int(time.Now().Unix())
-
-	hmap := ter.HeightMap{ChunkSize:128, NbOctaves:4}
-	hmap.Perlin = perlin
-	chunk := ter.GetChunk(&hmap, mgl32.Vec2{0.0, 0.0})
-
-	mesh = ter.CreateChunkPolyMesh(*chunk)
-
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to inifitialize glfw:", err)
 	}
@@ -54,6 +45,17 @@ func main() {
 		panic(err)
 	}
 
+	var perlin = noiselib.DefaultPerlin()
+	perlin.Seed = int(time.Now().Unix())
+
+	hmap := ter.HeightMap{ChunkNBPoints: 16, ChunkWorldSize: 8, NbOctaves:4}
+	hmap.Perlin = perlin
+	chunk := ter.GetChunk(&hmap, mgl32.Vec2{0.0, 0.0})
+
+	mesh = ter.CreateChunkPolyMesh(*chunk)
+
+	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, 2)
+
 	err := programLoop(window)
 	if err != nil {
 		log.Fatalln(err)
@@ -61,22 +63,6 @@ func main() {
 }
 
 func programLoop(window *win.Window) error {
-
-	m := gfx.Mesh{}
-
-	v0 := gfx.Vertex{Position : mgl32.Vec3{1.0, 1.0, 1.0}}
-	v1 := gfx.Vertex{Position : mgl32.Vec3{1.0, 1.0, 1.0}}
-	v2 := gfx.Vertex{Position : mgl32.Vec3{1.0, 1.0, 1.0}}
-
-	t0 := gfx.TriangleConnectivity{0, 1, 2}
-
-	m.Vertices = append(m.Vertices, v0)
-	m.Vertices = append(m.Vertices, v1)
-	m.Vertices = append(m.Vertices, v2)
-
-
-	m.Connectivity = append(m.Connectivity, t0)
-
 	// the linked shader program determines how the data will be rendered
 	vertShader, err := gfx.NewShaderFromFile("shaders/phong.vert", gl.VERTEX_SHADER)
 	if err != nil {
@@ -104,6 +90,10 @@ func programLoop(window *win.Window) error {
 	if err != nil {
 		return err
 	}*/
+
+	for _, chunk := range chunks{
+		chunk.Model.Program = program
+	}
 
 	model = gfx.BuildModel(mesh)
 	model.Program = program
@@ -148,8 +138,10 @@ func programLoop(window *win.Window) error {
 		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 		gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
 
-		gfx.Render(model, camTransform, projectTransform)
-
+	//	gfx.Render(model, camTransform, projectTransform)
+		for _, chunk := range chunks{
+			gfx.Render(*(chunk.Model), camTransform, projectTransform)
+		}
 		gl.BindVertexArray(0)
 		// end of draw loop
 	}

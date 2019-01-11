@@ -41,9 +41,9 @@ func BuildModel(mesh Mesh) Model {
 
 	for i, vert := range mesh.Vertices{
 		index := 12*i
-		vertArray[index] = vert.Position.X()/5.0
+		vertArray[index] = vert.Position.X()
 		vertArray[index + 1] = vert.Position.Y() *2
-		vertArray[index + 2] = vert.Position.Z()/5.0
+		vertArray[index + 2] = vert.Position.Z()
 		vertArray[index + 3] = vert.Normal.X()
 		vertArray[index + 4] = vert.Normal.Y()
 		vertArray[index + 5] = vert.Normal.Z()
@@ -57,41 +57,40 @@ func BuildModel(mesh Mesh) Model {
 		vertArray[index + 11] = vert.Texture.Y()
 
 	}
+
 	var VAO uint32
-	gl.GenVertexArrays(1, &VAO)
-
 	var VBO uint32
-	gl.GenBuffers(1, &VBO)
-
 	var IndexBO uint32
+	gl.GenVertexArrays(1, &VAO)
+	gl.GenBuffers(1, &VBO)
 	gl.GenBuffers(1, &IndexBO)
 
 	// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointers()
 	gl.BindVertexArray(VAO)
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
-
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertArray) * floatSize, gl.Ptr(vertArray), gl.STATIC_DRAW)
 
 	var stride int32 = int32(floatSize * (3 + 3 + 4 + 2)) //pos + norm + col + tex
 	var offset int = 0
 
-	//set inputs
-	//position
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
-	gl.EnableVertexAttribArray(0)
-	offset += 3 * floatSize
-	//normal
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
-	gl.EnableVertexAttribArray(1)
-	offset += 3 * floatSize
-	//color
-	gl.VertexAttribPointer(2, 4, gl.FLOAT, false, stride, gl.PtrOffset(offset))
-	gl.EnableVertexAttribArray(2)
-	offset += 4 * floatSize
-	//texture
-	gl.VertexAttribPointer(3, 2, gl.FLOAT, false, stride, gl.PtrOffset(offset))
-	gl.EnableVertexAttribArray(3)
-	offset += 2 * floatSize
+	//set attribs
+	{
+		gl.VertexAttribPointer(0, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
+		gl.EnableVertexAttribArray(0)
+		offset += 3 * floatSize
+		//normal
+		gl.VertexAttribPointer(1, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
+		gl.EnableVertexAttribArray(1)
+		offset += 3 * floatSize
+		//color
+		gl.VertexAttribPointer(2, 4, gl.FLOAT, false, stride, gl.PtrOffset(offset))
+		gl.EnableVertexAttribArray(2)
+		offset += 4 * floatSize
+		//texture
+		gl.VertexAttribPointer(3, 2, gl.FLOAT, false, stride, gl.PtrOffset(offset))
+		gl.EnableVertexAttribArray(3)
+		offset += 2 * floatSize
+	}
 
 	gl.BindVertexArray(0)
 	//connectivity
@@ -104,6 +103,9 @@ func BuildModel(mesh Mesh) Model {
 	}
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBO)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(mesh.Connectivity) * 3 * 4, gl.Ptr(connectivity), gl.STATIC_DRAW)
+
+	gl.BindVertexArray(0)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
 
 	model.Indices = connectivity
 	model.VAO = VAO

@@ -8,45 +8,53 @@ import (
 )
 
 type HeightMap struct {
-	ChunkSize uint32
-	NbOctaves uint32
-	Chunks map[mgl32.Vec2]*HeightMapChunk
-	Perlin noiselib.Perlin
+	ChunkNBPoints  uint32
+	ChunkWorldSize uint32
+	NbOctaves      uint32
+	Chunks         map[mgl32.Vec2]*HeightMapChunk
+	Perlin         noiselib.Perlin
 }
 
 type HeightMapChunk struct{
-	Size 		uint32
-	Position 	mgl32.Vec2
-	Map  		[]float32
+	NBPoints  uint32
+	WorldSize uint32
+	Position  mgl32.Vec2
+	Map       []float32
+	Model     *gfx.Model
 }
 
 //relative coordinates
 func WorldToChunkCoordinates(hmap *HeightMap, world mgl32.Vec2) mgl32.Vec2{
-	x := int32(world.X()) / int32(hmap.ChunkSize)
-	y := int32(world.Y()) / int32(hmap.ChunkSize)
+	x := int32(world.X()) / int32(hmap.ChunkWorldSize)
+	y := int32(world.Y()) / int32(hmap.ChunkWorldSize)
 	return mgl32.Vec2{float32(x), float32(y)}
 }
 
 func ChunkToWorldCoordinates(hmap *HeightMap, chunk mgl32.Vec2) mgl32.Vec2{
-	x := int32(chunk.X()) * int32(hmap.ChunkSize)
-	y := int32(chunk.Y()) * int32(hmap.ChunkSize)
+	x := int32(chunk.X()) * int32(hmap.ChunkWorldSize)
+	y := int32(chunk.Y()) * int32(hmap.ChunkWorldSize)
 	return mgl32.Vec2{float32(x), float32(y)}
 }
 
 func generateChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
-	chunk := HeightMapChunk{Size: heightMap.ChunkSize, Position: position}
-	chunk.Map = make([]float32, chunk.Size * chunk.Size)
+	chunk := HeightMapChunk{NBPoints: heightMap.ChunkNBPoints, WorldSize: heightMap.ChunkWorldSize, Position: position}
+	chunk.Map = make([]float32, (chunk.NBPoints+1)*(chunk.NBPoints+1))
 
-	posX := int32(position.X())
-	posZ := int32(position.Y())
+	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
 
-	for x := posX; x < posX + int32(chunk.Size); x++{
-		for z := posZ; z < posZ + int32(chunk.Size); z++ {
-			index := x - posX + (z - posZ) * int32(chunk.Size)
-			chunk.Map[index] = float32(heightMap.Perlin.GetValue(float64(x)/100.0, 0, float64(z)/100.0))
+	for x := 0; x < int(chunk.NBPoints) + 1; x ++{
+		for z := 0; z < int(chunk.NBPoints) + 1; z++{
+			index := x + z * int(chunk.NBPoints+1)
+			posX := position.X() * float32(chunk.WorldSize) + float32(x) * step
+			posZ := position.Y() * float32(chunk.WorldSize) + float32(z) * step
+			chunk.Map[index] = float32(heightMap.Perlin.GetValue(float64(posX), 0, float64(posZ)))
 		}
 	}
-
+	mesh := CreateChunkPolyMesh(chunk)
+	model := gfx.BuildModel(mesh)
+	translate := mgl32.Translate3D(position.X()*float32(chunk.WorldSize), 0, position.Y()*float32(chunk.WorldSize))
+	model.Transform = translate
+	chunk.Model = &model
 	return &chunk
 }
 
@@ -65,12 +73,14 @@ func GetChunk(heightMap *HeightMap, position mgl32.Vec2) *HeightMapChunk{
 
 func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 	mesh := gfx.Mesh{}
-	size := int(chunk.Size)
+	size := int(chunk.NBPoints)
+
+	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
 
 	//first add all vertices
-	for x:=0; x < size; x++{
-		for z:=0; z < size; z++ {
-			position := mgl32.Vec3{float32(x) + chunk.Position.X(), chunk.Map[x + z * size], float32(z) + chunk.Position.Y()}
+	for x:=0; x < size+1; x++{
+		for z:=0; z < size+1; z++ {
+			position := mgl32.Vec3{float32(x) * step, chunk.Map[x + z * (size+1)], float32(z) * step}
 			normal := mgl32.Vec3{0.0, -1.0, 0.0}
 			color := mgl32.Vec4{0.0, 0.5, 0.0, 1.0}
 			texture := mgl32.Vec2{0.0, 0.0}
@@ -85,11 +95,11 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 	}
 
 	//then build triangles
-	for x:=0; x < size - 1; x++ {
-		for z := 0; z < size - 1; z++ {
-			i := uint32(x) + chunk.Size * uint32(z)
-			tri1 := gfx.TriangleConnectivity{i, i + 1, i + uint32(chunk.Size)};
-			tri2 := gfx.TriangleConnectivity{i + 1, i + uint32(chunk.Size) + 1, i + uint32(chunk.Size)};
+	for x:=0; x < size; x++ {
+		for z := 0; z < size; z++ {
+			i := uint32(x) + (chunk.NBPoints+1) * uint32(z)
+			tri1 := gfx.TriangleConnectivity{i, i + 1, i + uint32(chunk.NBPoints+1)};
+			tri2 := gfx.TriangleConnectivity{i + 1, i + uint32(chunk.NBPoints+1) + 1, i + uint32(chunk.NBPoints+1)};
 			mesh.Connectivity = append(mesh.Connectivity, tri1)
 			mesh.Connectivity = append(mesh.Connectivity, tri2)
 		}
