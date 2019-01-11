@@ -17,8 +17,6 @@ func Render(m Model, view mgl32.Mat4, project mgl32.Mat4) {
 
 	gl.BindVertexArray(m.VAO)
 
-	//temporary
-	gl.Uniform3f(program.GetUniformLocation("objectColor"), 0.0, 0.5, 0.0) //TO CHANGE
 	gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 	gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
 

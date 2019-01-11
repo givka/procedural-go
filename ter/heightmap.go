@@ -71,7 +71,7 @@ func CreateChunkPolyMesh(chunk HeightMapChunk) gfx.Mesh{
 		for z:=0; z < size; z++ {
 			position := mgl32.Vec3{float32(x) + chunk.Position.X(), chunk.Map[x + z * size], float32(z) + chunk.Position.Y()}
 			normal := mgl32.Vec3{0.0, -1.0, 0.0}
-			color := mgl32.Vec4{1.0, 0.0, 0.0, 1.0}
+			color := mgl32.Vec4{0.0, 0.5, 0.0, 1.0}
 			texture := mgl32.Vec2{0.0, 0.0}
 
 			v := gfx.Vertex{
