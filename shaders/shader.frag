@@ -3,25 +3,24 @@
 in vec3 Normal;
 in vec3 FragPos;
 in vec3 LightPos;
+in vec4 MatColor;
 out vec4 color;
 
-uniform vec3 objectColor;
 uniform vec3 lightColor;
 
 void main()
 {
 	// affects diffuse and specular lighting
-	float lightPower = 2.0f;
+	float lightPower = 50.0f;
 
 	// diffuse and specular intensity are affected by the amount of light they get based on how
 	// far they are from a light source (inverse square of distance)
 	float distToLight = length(LightPos - FragPos);
-
 	// this is not the correct equation for light decay but it is close
 	// see light-casters sample for the proper way
 	float distIntensityDecay = 1.0f / pow(distToLight, 2);
 
-	float ambientStrength = 0.05f;
+	float ambientStrength = 0.2f;
 	vec3 ambientLight = ambientStrength * lightColor;
 
 	vec3 norm = normalize(Normal);
@@ -40,6 +39,6 @@ void main()
 	float spec = pow(max(dot(dirToView, reflectDir), 0.0), shininess);
 	vec3 specularLight = lightPower * specularStrength * spec * distIntensityDecay * lightColor;
 
-	vec3 result = (diffuseLight + specularLight + ambientLight) * objectColor;
+	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
 	color = vec4(result, 1.0f);
 }

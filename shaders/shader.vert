@@ -2,6 +2,8 @@
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
+layout (location = 2) in vec4 color;
+layout (location = 3) in vec2 texture;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -12,6 +14,7 @@ uniform vec3 lightPos;  // only need one light for a basic example
 out vec3 Normal;
 out vec3 FragPos;
 out vec3 LightPos;
+out vec4 MatColor;
 
 void main()
 {
@@ -33,4 +36,5 @@ void main()
     // see here for more details: http://www.lighthouse3d.com/tutorials/glsl-tutorial/the-normal-matrix/
     mat3 normMatrix = mat3(transpose(inverse(view))) * mat3(transpose(inverse(model)));
     Normal = normMatrix * normal;
+    MatColor = color;
 }
