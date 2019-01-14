@@ -168,6 +168,10 @@ func programLoop(window *win.Window) error {
 			branch.Model.Program = program
 			gfx.Render(*(branch.Model), camTransform, projectTransform, camera.Position())
 		}
+		for _, leaf := range tree.Leaves {
+			leaf.Model.Program = program
+			gfx.Render(*(leaf.Model), camTransform, projectTransform, camera.Position())
+		}
 
 		gl.BindVertexArray(0)
 
