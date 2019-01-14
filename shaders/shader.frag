@@ -4,9 +4,13 @@ in vec3 Normal;
 in vec3 FragPos;
 in vec3 LightPos;
 in vec4 MatColor;
+in vec2 TexCoord;
+
 out vec4 color;
 
 uniform vec3 lightColor;
+uniform sampler2D currentTexture;
+uniform int textureId;
 
 void main()
 {
@@ -40,5 +44,15 @@ void main()
 	vec3 specularLight = lightPower * specularStrength * spec * distIntensityDecay * lightColor;
 
 	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
-	color = vec4(result, 1.0f);
+
+	if(textureId > 0){
+		vec4 texColor = texture(currentTexture, TexCoord);
+		if(texColor.a < 0.1)
+					discard;
+		color = mix(texColor, vec4(result, 1.0f), 0.5);
+	} else{
+		color = vec4(result, 1.0f);
+	}
+
+	
 }

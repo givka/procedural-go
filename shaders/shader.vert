@@ -15,6 +15,7 @@ out vec3 Normal;
 out vec3 FragPos;
 out vec3 LightPos;
 out vec4 MatColor;
+out vec2 TexCoord;
 
 void main()
 {
@@ -37,4 +38,5 @@ void main()
     mat3 normMatrix = mat3(transpose(inverse(view))) * mat3(transpose(inverse(model)));
     Normal = normMatrix * normal;
     MatColor = color;
+    TexCoord = texture; 
 }

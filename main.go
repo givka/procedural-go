@@ -103,6 +103,11 @@ func programLoop(window *win.Window) error {
 	}
 	defer program.Delete()
 
+	textureLeaves, err := gfx.NewTextureFromFile("data/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	for _, chunk := range chunks {
 		chunk.Model.Program = program
 	}
@@ -168,10 +173,15 @@ func programLoop(window *win.Window) error {
 			branch.Model.Program = program
 			gfx.Render(*(branch.Model), camTransform, projectTransform, camera.Position())
 		}
+
+		textureLeaves.Bind(gl.TEXTURE1)
+		textureLeaves.SetUniform(program.GetUniformLocation("currentTexture"))
 		for _, leaf := range tree.Leaves {
 			leaf.Model.Program = program
+			leaf.Model.TextureID = 1
 			gfx.Render(*(leaf.Model), camTransform, projectTransform, camera.Position())
 		}
+		textureLeaves.UnBind()
 
 		gl.BindVertexArray(0)
 

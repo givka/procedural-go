@@ -19,6 +19,7 @@ func Render(m Model, view mgl32.Mat4, project mgl32.Mat4, cameraPosition mgl32.V
 
 	gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 	gl.Uniform3f(program.GetUniformLocation("lightPos"), lightPos.X(), lightPos.Y(), lightPos.Z())
+	gl.Uniform1i(program.GetUniformLocation("textureId"), int32(m.TextureID))
 
 	gl.DrawElements(gl.TRIANGLES, m.NbTriangles, gl.UNSIGNED_INT, gl.Ptr(m.Indices))
 

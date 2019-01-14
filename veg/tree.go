@@ -34,10 +34,6 @@ type Branch struct {
 }
 
 type Leaf struct {
-	angleY   float32
-	angleZ   float32
-	height   float32
-	radius   float32
 	position mgl32.Vec3
 	Model    *gfx.Model
 }
@@ -57,30 +53,33 @@ func CreateTree() *Tree {
 
 	tree.createBranches()
 
-	fmt.Println("nbrOfTriangles: ", int32(len(tree.Branches))*tree.Branches[0].Model.NbTriangles+int32(len(tree.Leaves))*tree.Leaves[0].Model.NbTriangles)
+	fmt.Println("nbrOfTriangles: ",
+		int32(len(tree.Branches))*tree.Branches[0].Model.NbTriangles+int32(len(tree.Leaves))*tree.Leaves[0].Model.NbTriangles)
 	return tree
 }
 
 func createLeafModel(b Branch) *gfx.Model {
 	mesh := gfx.Mesh{}
-	nbRadius := 10
-	width := float32(b.height / 2.0)
+	nbRadius := 2
+	// height := b.radius * 10.0
+	width := float32(b.height)
 	dr := 180.0 / (nbRadius)
 	index := uint32(0)
+	offsetRotY := rand.Float32() * 360.0
 
 	for i := 0; i < nbRadius; i++ {
-		toAdd := rotateZ(b.angleZ, mgl32.Vec3{0, b.height / 2.0, 0})
+		toAdd := rotateZ(b.angleZ, mgl32.Vec3{0, b.height / 2, 0})
 		toAdd = rotateY(b.angleY, toAdd)
 		start := b.position.Add(toAdd)
-		end := start.Add(toAdd)
+		end := start.Add(toAdd.Mul(2))
 
-		toAdd2 := rotateY(float32(i*dr), mgl32.Vec3{width, 0, width})
+		toAdd2 := rotateY(offsetRotY+float32(i*dr), mgl32.Vec3{width, 0, width})
 		p1 := start.Sub(toAdd2)
 		p2 := start.Add(toAdd2)
 		p3 := end.Sub(toAdd2)
 		p4 := end.Add(toAdd2)
 
-		normal := mgl32.Vec3{0, -2, 0}
+		normal := mgl32.Vec3{0, -1, 0}
 		normal = normal.Normalize()
 		color := mgl32.Vec4{0.0, 0.5, 0.0, 1.0}
 		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p1, Normal: normal, Color: color, Texture: mgl32.Vec2{0.0, 0.0}})
@@ -111,7 +110,7 @@ func createBranchModel(b Branch) *gfx.Model {
 	toAdd = rotateY(b.angleY, toAdd)
 	end := start.Add(toAdd)
 
-	radiusDec := b.radius / 100.0
+	radiusDec := b.radius / 5.0
 
 	for i := 0; i < nbRadius; i++ {
 		p1 := mgl32.Vec3{float32(math.Cos(dr * float64(i))), 0, float32(math.Sin(dr * float64(i)))}.Mul(float32(b.radius)).Add(start)
@@ -132,7 +131,6 @@ func createBranchModel(b Branch) *gfx.Model {
 		mesh.Connectivity = append(mesh.Connectivity, t2)
 		index += 4
 	}
-
 	model := gfx.BuildModel(mesh)
 	translate := mgl32.Translate3D(0, 0, 0)
 	model.Transform = translate
@@ -140,12 +138,11 @@ func createBranchModel(b Branch) *gfx.Model {
 }
 
 func (t *Tree) createBranches() {
-	var branches []Branch
-	var branch = Branch{radius: 0.10, height: -1}
-	var leaf Leaf
-	var addSomething = false
+	branches := []Branch{}
+	branch := Branch{radius: 0.10, height: -1}
+	leaf := Leaf{}
+	addSomething := false
 
-	// t.grammar = "FF[+F][+F]"
 	for _, letter := range strings.Split(t.grammar, "") {
 		switch letter {
 		case "F":
@@ -155,11 +152,10 @@ func (t *Tree) createBranches() {
 				toAdd = rotateY(branch.angleY, toAdd)
 				branch.position = branch.position.Add(toAdd)
 			}
-			branch.radius -= branch.radius / 100.0
+			branch.radius -= branch.radius / 5.0
 			addSomething = true
 			branch.Model = createBranchModel(branch)
 			t.Branches = append(t.Branches, branch)
-			// fmt.Println(branch.angleZ, branch.radius)
 			break
 		case "+":
 			branch.angleZ += t.angle
@@ -176,6 +172,7 @@ func (t *Tree) createBranches() {
 			branches = append(branches, branch) //push
 			break
 		case "]":
+			leaf.position = branch.position
 			leaf.Model = createLeafModel(branch)
 			t.Leaves = append(t.Leaves, leaf)
 			branch, branches = branches[len(branches)-1], branches[:len(branches)-1] //pop
