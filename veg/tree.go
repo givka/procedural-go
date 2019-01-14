@@ -57,36 +57,36 @@ func CreateTree() *Tree {
 
 	tree.createBranches()
 
-	fmt.Println("nbrOfTriangles: ", int32(len(tree.Branches))*tree.Branches[0].Model.NbTriangles)
+	fmt.Println("nbrOfTriangles: ", int32(len(tree.Branches))*tree.Branches[0].Model.NbTriangles+int32(len(tree.Leaves))*tree.Leaves[0].Model.NbTriangles)
 	return tree
 }
 
 func createLeafModel(b Branch) *gfx.Model {
 	mesh := gfx.Mesh{}
-	nbRadius := 2
-	width := float32(b.height / 4.0)
+	nbRadius := 10
+	width := float32(b.height / 2.0)
 	dr := 180.0 / (nbRadius)
 	index := uint32(0)
 
 	for i := 0; i < nbRadius; i++ {
-
 		toAdd := rotateZ(b.angleZ, mgl32.Vec3{0, b.height / 2.0, 0})
 		toAdd = rotateY(b.angleY, toAdd)
 		start := b.position.Add(toAdd)
 		end := start.Add(toAdd)
+
 		toAdd2 := rotateY(float32(i*dr), mgl32.Vec3{width, 0, width})
 		p1 := start.Sub(toAdd2)
 		p2 := start.Add(toAdd2)
 		p3 := end.Sub(toAdd2)
 		p4 := end.Add(toAdd2)
-		normal := mgl32.Vec3{float32(math.Cos(float64(i * dr))), 0, float32(math.Sin(float64(i * dr)))}
+
+		normal := mgl32.Vec3{0, -2, 0}
 		normal = normal.Normalize()
 		color := mgl32.Vec4{0.0, 0.5, 0.0, 1.0}
-		texture := mgl32.Vec2{0.0, 0.0}
-		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p1, Normal: normal, Color: color, Texture: texture})
-		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p2, Normal: normal, Color: color, Texture: texture})
-		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p3, Normal: normal, Color: color, Texture: texture})
-		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p4, Normal: normal, Color: color, Texture: texture})
+		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p1, Normal: normal, Color: color, Texture: mgl32.Vec2{0.0, 0.0}})
+		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p2, Normal: normal, Color: color, Texture: mgl32.Vec2{1.0, 0.0}})
+		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p3, Normal: normal, Color: color, Texture: mgl32.Vec2{0.0, 1.0}})
+		mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p4, Normal: normal, Color: color, Texture: mgl32.Vec2{1.0, 1.0}})
 		t1 := gfx.TriangleConnectivity{U0: index, U1: index + 1, U2: index + 3}
 		t2 := gfx.TriangleConnectivity{U0: index, U1: index + 3, U2: index + 2}
 		mesh.Connectivity = append(mesh.Connectivity, t1)
