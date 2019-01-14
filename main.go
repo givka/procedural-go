@@ -9,7 +9,9 @@ import (
 	"./cam"
 	"./gfx"
 	"./ter"
+	"./veg"
 	"./win"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -23,6 +25,7 @@ var hmap ter.HeightMap
 var chunks []*ter.HeightMapChunk
 
 var NBChunks uint = 4
+
 // PERLIN CONFIG VARS
 // TODO: MOVE TO JSON AND ADD GUI
 
@@ -56,14 +59,14 @@ func main() {
 	perlin.Seed = int(time.Now().Unix())
 	perlin.OctaveCount = 10
 	perlin.Frequency = 0.1
-	perlin.Lacunarity  = 2.0
+	perlin.Lacunarity = 2.0
 	perlin.Persistence = 0.5
-	perlin.Quality     = noiselib.QualitySTD
+	perlin.Quality = noiselib.QualitySTD
 
 	hmap = ter.HeightMap{
-		ChunkNBPoints: 128,
+		ChunkNBPoints:  128,
 		ChunkWorldSize: 32,
-		NbOctaves:4,
+		NbOctaves:      4,
 	}
 
 	hmap.Perlin = perlin
@@ -110,13 +113,16 @@ func programLoop(window *win.Window) error {
 	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 45, 45, window.InputManager())
 
 	currentChunk := getCurrentChunkFromCam(*camera, &hmap)
+
+	tree := veg.CreateTree()
+
 	for !window.ShouldClose() {
 		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			fmt.Println("New Chunk", currentChunk)
 
 			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, NBChunks)
-			for _, chunk := range chunks{
+			for _, chunk := range chunks {
 
 				chunk.Model.Program = program
 			}
@@ -155,7 +161,14 @@ func programLoop(window *win.Window) error {
 		//	gfx.Render(model, camTransform, projectTransform)
 		for _, chunk := range chunks {
 			gfx.Render(*(chunk.Model), camTransform, projectTransform, camera.Position())
+
 		}
+
+		for _, branch := range tree.Branches {
+			branch.Model.Program = program
+			gfx.Render(*(branch.Model), camTransform, projectTransform, camera.Position())
+		}
+
 		gl.BindVertexArray(0)
 
 		// end of draw loop
