@@ -126,7 +126,7 @@ func programLoop(window *win.Window) error {
 	currentChunk := getCurrentChunkFromCam(*camera, &hmap)
 
 	for indexRule := range veg.Rules() {
-		trees = append(trees, veg.CreateTree(indexRule, mgl32.Vec3{5, -2, float32(indexRule) * 2.0}))
+		trees = append(trees, veg.CreateTree(indexRule, mgl32.Vec3{5, -2, float32(indexRule) * 4.0}))
 	}
 
 	for !window.ShouldClose() {
