@@ -12,7 +12,14 @@ import (
 
 var rules = []string{
 	"F[-F]F[+F][F]",
+	"F[+FF]F[-F]",
+	"F[+F][-FF]F",
 	"F[+F]F[-F]F",
+	"F[-F+F]F[+F]",
+}
+
+func Rules() []string {
+	return rules
 }
 
 // rule: "F[+F]F[-F]F",
@@ -21,7 +28,7 @@ type Tree struct {
 	angle         float32
 	rule          string
 	axiom         string
-	nbrIndex      int
+	position      mgl32.Vec3
 	BranchesModel *gfx.Model
 	LeavesModel   *gfx.Model
 }
@@ -34,16 +41,17 @@ type Branch struct {
 	position mgl32.Vec3
 }
 
-func CreateTree() *Tree {
+func CreateTree(ruleIndex int, position mgl32.Vec3) *Tree {
+
 	tree := &Tree{
-		rule:     "F[-F]F[+F][F]",
-		angle:    25.0,
+		rule:     rules[ruleIndex],
+		angle:    15.0 + rand.Float32()*15.0,
 		grammar:  "F",
 		axiom:    "F",
-		nbrIndex: 2,
+		position: position,
 	}
 
-	for index := 0; index < tree.nbrIndex; index++ {
+	for index := 0; index < 2; index++ {
 		tree.grammar = strings.Replace(tree.grammar, tree.axiom, tree.rule, -1)
 	}
 
@@ -58,17 +66,17 @@ func createLeavesModel(branches []Branch) *gfx.Model {
 	index := uint32(0)
 
 	for _, branch := range branches {
-		width := float32(branch.height)
 		dr := 180.0 / (nbRadius)
 		offsetRotY := rand.Float32() * 360.0
+		sizeLeaves := branch.position.Y() / 6.0
 
 		for i := 0; i < nbRadius; i++ {
 			toAdd := rotateZ(branch.angleZ, mgl32.Vec3{0, branch.height / 2, 0})
 			toAdd = rotateY(branch.angleY, toAdd)
 			start := branch.position.Add(toAdd)
-			end := start.Add(toAdd.Mul(2))
+			end := start.Add(rotateY(branch.angleY, rotateZ(branch.angleZ, mgl32.Vec3{0, sizeLeaves, 0})))
 
-			toAdd2 := rotateY(offsetRotY+float32(i*dr), mgl32.Vec3{width, 0, width})
+			toAdd2 := rotateY(offsetRotY+float32(i*dr), mgl32.Vec3{sizeLeaves, 0, sizeLeaves})
 			p1 := start.Sub(toAdd2)
 			p2 := start.Add(toAdd2)
 			p3 := end.Sub(toAdd2)
@@ -137,7 +145,7 @@ func (t *Tree) generateFromGrammar() {
 	rootBranches := []Branch{}
 	branches := []Branch{}
 	leaves := []Branch{}
-	branch := Branch{radius: 0.05, height: -0.5}
+	branch := Branch{radius: 0.05, height: -0.5, position: t.position}
 	addSomething := false
 
 	for _, letter := range strings.Split(t.grammar, "") {
