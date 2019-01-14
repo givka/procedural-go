@@ -23,6 +23,7 @@ var model gfx.Model
 var hmap ter.HeightMap
 
 var chunks []*ter.HeightMapChunk
+var trees []*veg.Tree
 
 var NBChunks uint = 4
 
@@ -120,6 +121,7 @@ func programLoop(window *win.Window) error {
 	currentChunk := getCurrentChunkFromCam(*camera, &hmap)
 
 	tree := veg.CreateTree()
+	trees = append(trees, tree)
 
 	for !window.ShouldClose() {
 		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
@@ -169,18 +171,19 @@ func programLoop(window *win.Window) error {
 
 		}
 
-		for _, branch := range tree.Branches {
-			branch.Model.Program = program
-			gfx.Render(*(branch.Model), camTransform, projectTransform, camera.Position())
-		}
-
 		textureLeaves.Bind(gl.TEXTURE1)
 		textureLeaves.SetUniform(program.GetUniformLocation("currentTexture"))
-		for _, leaf := range tree.Leaves {
-			leaf.Model.Program = program
-			leaf.Model.TextureID = 1
-			gfx.Render(*(leaf.Model), camTransform, projectTransform, camera.Position())
+
+		for _, tree := range trees {
+
+			tree.BranchesModel.Program = program
+			gfx.Render(*(tree.BranchesModel), camTransform, projectTransform, camera.Position())
+
+			tree.LeavesModel.Program = program
+			tree.LeavesModel.TextureID = 1
+			gfx.Render(*(tree.LeavesModel), camTransform, projectTransform, camera.Position())
 		}
+
 		textureLeaves.UnBind()
 
 		gl.BindVertexArray(0)
