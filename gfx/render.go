@@ -1,9 +1,9 @@
 package gfx
 
 import (
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
-import "github.com/go-gl/gl/v4.1-core/gl"
 
 func Render(m Model, view mgl32.Mat4, project mgl32.Mat4, cameraPosition mgl32.Vec3) {
 	lightPos := mgl32.Vec3{cameraPosition.X(), cameraPosition.Y(), cameraPosition.Z()}

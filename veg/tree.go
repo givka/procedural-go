@@ -114,12 +114,11 @@ func createBranchesModel(branches []Branch) *gfx.Model {
 			p4 := mgl32.Vec3{float32(math.Cos(dr * float64(i+1))), 0, float32(math.Sin(dr * float64(i+1)))}.Mul(float32(branch.radius - radiusDec)).Add(end)
 			normal := mgl32.Vec3{float32(math.Cos(dr * float64(i))), 0, float32(math.Sin(dr * float64(i)))}
 			normal = normal.Normalize()
-			color := mgl32.Vec4{0.5, 0.2, 0.1, 1.0}
-			texture := mgl32.Vec2{0.0, 0.0}
-			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p1, Normal: normal, Color: color, Texture: texture})
-			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p2, Normal: normal, Color: color, Texture: texture})
-			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p3, Normal: normal, Color: color, Texture: texture})
-			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p4, Normal: normal, Color: color, Texture: texture})
+			color := mgl32.Vec4{0.5, 0.5, 0.1, 1.0}
+			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p1, Normal: normal, Color: color, Texture: mgl32.Vec2{0.0, 0.0}})
+			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p2, Normal: normal, Color: color, Texture: mgl32.Vec2{1.0, 0.0}})
+			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p3, Normal: normal, Color: color, Texture: mgl32.Vec2{0.0, 1.0}})
+			mesh.Vertices = append(mesh.Vertices, gfx.Vertex{Position: p4, Normal: normal, Color: color, Texture: mgl32.Vec2{1.0, 1.0}})
 			t1 := gfx.TriangleConnectivity{U0: index, U1: index + 1, U2: index + 3}
 			t2 := gfx.TriangleConnectivity{U0: index, U1: index + 3, U2: index + 2}
 			mesh.Connectivity = append(mesh.Connectivity, t1)
@@ -138,7 +137,7 @@ func (t *Tree) generateFromGrammar() {
 	rootBranches := []Branch{}
 	branches := []Branch{}
 	leaves := []Branch{}
-	branch := Branch{radius: 0.010, height: -0.1}
+	branch := Branch{radius: 0.05, height: -0.5}
 	addSomething := false
 
 	for _, letter := range strings.Split(t.grammar, "") {

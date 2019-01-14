@@ -45,7 +45,7 @@ void main()
 
 	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
 
-	if(textureId > 0){
+	if(textureId != 0){
 		vec4 texColor = texture(currentTexture, TexCoord);
 		if(texColor.a < 0.1)
 					discard;

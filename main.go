@@ -104,6 +104,11 @@ func programLoop(window *win.Window) error {
 	}
 	defer program.Delete()
 
+	textureBranches, err := gfx.NewTextureFromFile("data/branches.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	textureLeaves, err := gfx.NewTextureFromFile("data/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
 	if err != nil {
 		panic(err.Error())
@@ -147,7 +152,7 @@ func programLoop(window *win.Window) error {
 		// creates perspective
 		fov := float32(90.0)
 		far := float32(100.0)
-		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov), float32(window.Width())/float32(window.Height()), 0.1, far)
+		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov), float32(window.Width())/float32(window.Height()), 0.001, far)
 
 		camTransform := camera.GetTransform()
 		/*		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
@@ -171,20 +176,24 @@ func programLoop(window *win.Window) error {
 
 		}
 
-		textureLeaves.Bind(gl.TEXTURE1)
-		textureLeaves.SetUniform(program.GetUniformLocation("currentTexture"))
+		textureBranches.Bind(gl.TEXTURE1)
+		textureLeaves.Bind(gl.TEXTURE2)
 
 		for _, tree := range trees {
 
+			textureBranches.SetUniform(program.GetUniformLocation("currentTexture"))
 			tree.BranchesModel.Program = program
+			tree.BranchesModel.TextureID = gl.TEXTURE1
 			gfx.Render(*(tree.BranchesModel), camTransform, projectTransform, camera.Position())
 
+			textureLeaves.SetUniform(program.GetUniformLocation("currentTexture"))
 			tree.LeavesModel.Program = program
-			tree.LeavesModel.TextureID = 1
+			tree.LeavesModel.TextureID = gl.TEXTURE2
 			gfx.Render(*(tree.LeavesModel), camTransform, projectTransform, camera.Position())
 		}
 
 		textureLeaves.UnBind()
+		textureBranches.UnBind()
 
 		gl.BindVertexArray(0)
 
