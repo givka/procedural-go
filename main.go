@@ -152,15 +152,15 @@ func programLoop(window *win.Window) error {
 
 		// creates perspective
 		fov := float32(90.0)
+		near := float32(0.001)
 		far := float32(100.0)
-		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov), float32(window.Width())/float32(window.Height()), 0.001, far)
-
+		projectTransform := mgl32.Perspective(mgl32.DegToRad(fov), float32(window.Width())/float32(window.Height()), near, far)
 		camTransform := camera.GetTransform()
-		/*		lightTransform := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z()).Mul4(
-				mgl32.Scale3D(5, 5, 5))
-		*/
 
 		program.Use()
+
+		gl.Uniform1f(program.GetUniformLocation("near"), near)
+		gl.Uniform1f(program.GetUniformLocation("far"), far)
 
 		//DEBUT RENDER
 		gl.UniformMatrix4fv(program.GetUniformLocation("view"), 1, false, &camTransform[0])
