@@ -30,7 +30,8 @@ func RenderModel(m *gfx.Model, c *cam.FpsCamera) {
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("view"), 1, false, &view[0])
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("project"), 1, false, &project[0])
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("model"), 1, false, &m.Transform[0])
-
+	gl.Uniform1f(m.Program.GetUniformLocation("near"), ctx.Near)
+	gl.Uniform1f(m.Program.GetUniformLocation("far"), ctx.Far)
 	gl.Uniform3f(m.Program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), c.Position().X(), c.Position().Y(), c.Position().Z())
 	gl.Uniform1i(m.Program.GetUniformLocation("textureId"), int32(m.TextureID))
