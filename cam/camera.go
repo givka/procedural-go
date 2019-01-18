@@ -51,6 +51,9 @@ func (c *FpsCamera) Update(dTime float64) {
 // the camera is to travel in and for how long
 func (c *FpsCamera) updatePosition(dTime float64) {
 	adjustedSpeed := float32(dTime * c.moveSpeed)
+	if c.inputManager.IsKeyActive(win.PlayerSlow) {
+		adjustedSpeed /= 10.0
+	}
 
 	if c.inputManager.IsKeyActive(win.PlayerForward) {
 		c.pos = c.pos.Add(c.front.Mul(adjustedSpeed))

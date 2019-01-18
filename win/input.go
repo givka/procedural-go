@@ -15,6 +15,7 @@ const (
 	PlayerLeft     ActionKey = iota
 	PlayerRight    ActionKey = iota
 	ProgramQuit    ActionKey = iota
+	PlayerSlow     ActionKey = iota
 )
 
 // ActionButton is a configurable abstraction of a mouse button press
@@ -50,6 +51,7 @@ func NewInputManager() *InputManager {
 		PlayerLeft:     glfw.KeyA,
 		PlayerRight:    glfw.KeyD,
 		ProgramQuit:    glfw.KeyEscape,
+		PlayerSlow:     glfw.KeyLeftShift,
 	}
 
 	actionToButtonMap := map[ActionButton]glfw.MouseButton{
