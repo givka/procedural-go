@@ -69,8 +69,8 @@ func RenderInstances(m *gfx.Model, camera *cam.FpsCamera, nbrInstances int) {
 	initialiseUniforms(m, camera)
 
 	gl.BindVertexArray(m.VAO)
-	//FIXME: m.NbTriangles*3 or m.NbTriangles
-	gl.DrawElementsInstanced(gl.TRIANGLES, m.NbTriangles, gl.UNSIGNED_INT, gl.Ptr(m.LoadingData.Connectivity), int32(nbrInstances))
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
+	gl.DrawElementsInstanced(gl.TRIANGLES, m.NbTriangles*3, gl.UNSIGNED_INT, nil, int32(nbrInstances))
 	gl.BindVertexArray(0)
 }
 
