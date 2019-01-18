@@ -124,19 +124,16 @@ func CreateForest(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) {
 		for z := 0; z < int(chunk.NBPoints)+1; z++ {
 			i := x + z*int(chunk.NBPoints+1)
 			posY := float32(chunk.Map[i])
-			height := -posY
-			if height < 0.40 || height > 0.50 {
+			if posY < 0.0 || posY > 0.10 {
 				continue
 			}
-
 			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
 			posZ := float32(chunk.Position[1])*float32(chunk.WorldSize) + float32(z)*step
-			transform := mgl32.Translate3D(posX, posY, posZ).Mul4(mgl32.Rotate3DY(posY * 360.0).Mat4())
+			transform := mgl32.Translate3D(posX, -2*posY, posZ).Mul4(mgl32.Rotate3DY(posY * 360.0).Mat4())
 			transform = transform.Mul4(mgl32.Rotate3DX(mgl32.DegToRad(angle)).Mat4())
 			if !isHQ {
 				transform = transform.Mul4(mgl32.Scale3D(5, 5, 5))
 			}
-
 			index := rand.Intn(len(instanceTrees))
 			instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
 		}
