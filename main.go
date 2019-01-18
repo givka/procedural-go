@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -22,10 +22,15 @@ var mesh gfx.Mesh
 var model gfx.Model
 var hmap ter.HeightMap
 
-var chunks []*ter.HeightMapChunk
 var trees []*veg.Tree
 
-var NBChunks uint = 4
+var chunks []*ter.Chunk
+
+var NBChunks uint = 2
+
+var VIEW_DISTANCE = 4
+var LOAD_DISTANCE = 6
+var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
 // TODO: MOVE TO JSON AND ADD GUI
@@ -49,7 +54,7 @@ func main() {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window := win.NewWindow(1280, 720, "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", true)
+	window := win.NewWindow(1920, 1080, "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", false)
 
 	// Initialize Glow (go function bindings)
 	if err := gl.Init(); err != nil {
@@ -57,22 +62,51 @@ func main() {
 	}
 
 	var perlin = noiselib.DefaultPerlin()
-	perlin.Seed = int(time.Now().Unix())
-	perlin.OctaveCount = 10
+	perlin.Seed = 0*int(time.Now().Unix())
+	perlin.OctaveCount = 14
 	perlin.Frequency = 0.1
-	perlin.Lacunarity = 2.0
+	perlin.Lacunarity  = 2.2
 	perlin.Persistence = 0.5
 	perlin.Quality = noiselib.QualitySTD
 
+
 	hmap = ter.HeightMap{
-		ChunkNBPoints:  128,
-		ChunkWorldSize: 32,
-		NbOctaves:      4,
+		ChunkNBPoints: 512,
+		ChunkWorldSize: 12,
+		NbOctaves:4,
+		Exponent:1.0,
 	}
 
 	hmap.Perlin = perlin
 
-	chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{0, 0}, NBChunks)
+	hmap.MountainNoise = noiselib.DefaultRidgedmulti()
+	hmap.MountainNoise.Frequency = 0.05
+	hmap.MountainNoise.OctaveCount = 14
+
+	hmap.MountainScaleBias = noiselib.DefaultScaleBias()
+	hmap.MountainScaleBias.SetSourceModule(0, hmap.MountainNoise)
+	hmap.MountainScaleBias.Scale = 1.8
+	hmap.MountainScaleBias.Bias = 0.0
+
+	hmap.PlainNoise = noiselib.DefaultBillow()
+	hmap.PlainNoise.Frequency = 0.02
+
+	hmap.PlainScaleBias = noiselib.DefaultScaleBias()
+	hmap.PlainScaleBias.SetSourceModule(0, hmap.PlainNoise)
+	hmap.PlainScaleBias.Scale = 0.125
+	hmap.PlainScaleBias.Bias = 0.5
+
+	hmap.TerrainType = noiselib.DefaultPerlin()
+	hmap.TerrainType.Frequency = 0.1
+	hmap.TerrainType.Persistence = 0.25
+
+	hmap.FinalTerrain = noiselib.DefaultSelect()
+	hmap.FinalTerrain.SetSourceModule(0, hmap.MountainScaleBias)
+	hmap.FinalTerrain.SetSourceModule(1, hmap.PlainScaleBias)
+	hmap.FinalTerrain.SetSourceModule(2, hmap.TerrainType)
+	hmap.FinalTerrain.LowerBound = 0
+	hmap.FinalTerrain.UpperBound = 1000
+	hmap.FinalTerrain.SetEdgeFalloff(0.125)
 
 	err := programLoop(window)
 	if err != nil {
@@ -102,6 +136,22 @@ func programLoop(window *win.Window) error {
 	if err != nil {
 		return err
 	}
+
+	chunkVertShader, err := gfx.NewShaderFromFile("shaders/chunk.vert", gl.VERTEX_SHADER)
+	if err != nil {
+		return err
+	}
+
+	chunkFragShader, err := gfx.NewShaderFromFile("shaders/chunk.frag", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return err
+	}
+
+	chunkProgram, err := gfx.NewProgram(chunkVertShader, chunkFragShader)
+	if err != nil {
+		return err
+	}
+
 	defer program.Delete()
 
 	textureBranches, err := gfx.NewTextureFromFile("data/branches.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
@@ -112,10 +162,6 @@ func programLoop(window *win.Window) error {
 	textureLeaves, err := gfx.NewTextureFromFile("data/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
 	if err != nil {
 		panic(err.Error())
-	}
-
-	for _, chunk := range chunks {
-		chunk.Model.Program = program
 	}
 
 	// ensure that triangles that are "behind" others do not draw over top of them
@@ -129,17 +175,56 @@ func programLoop(window *win.Window) error {
 		trees = append(trees, veg.CreateTree(indexRule, mgl32.Vec3{5, -2, float32(indexRule) * 4.0}))
 	}
 
+	//init lists
+	var visibilityList []*ter.Chunk
+	var renderList[]*ter.Chunk
+	var loadList[]*ter.Chunk
+	visibilityList = ter.GetVisibilityList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, VIEW_DISTANCE)
+
+	//create job queue
+	loadQueue := make(chan *ter.Chunk, 1000)
+
+	//start workers
+	for i := 0; i < NUM_WORKERS; i++{
+		go ter.ChunkLoadingWorker(loadQueue, &hmap)
+	}
+
+	loadListChangeFlag := true
+
 	for !window.ShouldClose() {
-		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
-			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
-			fmt.Println("New Chunk", currentChunk)
+		//OpenGL loading for new chunks
 
-			chunks = ter.GetSurroundingChunks(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, NBChunks)
-			for _, chunk := range chunks {
-
-				chunk.Model.Program = program
+		for _,chunk := range loadList{
+			if chunk.AtomicNeedOpenGLLoading == 1 && chunk.Loaded == false{
+				gfx.LoadModelData(chunk.Model) //
+				translate := mgl32.Translate3D(float32(chunk.Position[0])*float32(chunk.WorldSize), 0, float32(chunk.Position[1])*float32(chunk.WorldSize))
+				chunk.Model.Transform = translate
+				chunk.Model.Program = chunkProgram
+				chunk.Loaded = true //should not need to change other flags if this one is set
+				loadListChangeFlag = true
 			}
 		}
+
+		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
+			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
+			loadListChangeFlag = true
+		}
+
+		if loadListChangeFlag {
+			loadList = ter.GetLoadList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, LOAD_DISTANCE)
+			visibilityList = ter.GetVisibilityList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, VIEW_DISTANCE)
+			//submit loading jobs
+			for _, chunk := range loadList{
+				if !chunk.Loaded && !chunk.Loading{
+					chunk.Loading = true
+					loadQueue <- chunk
+				}
+			}
+			loadListChangeFlag = false
+		}
+
+		renderList = ter.GetRenderList(&hmap, visibilityList, *camera)
+
 		// swaps in last buffer, polls for window events, and generally sets up for a new render frame
 		window.StartFrame()
 
@@ -159,10 +244,6 @@ func programLoop(window *win.Window) error {
 
 		program.Use()
 
-		gl.Uniform1f(program.GetUniformLocation("near"), near)
-		gl.Uniform1f(program.GetUniformLocation("far"), far)
-
-		//DEBUT RENDER
 		gl.UniformMatrix4fv(program.GetUniformLocation("view"), 1, false, &camTransform[0])
 		gl.UniformMatrix4fv(program.GetUniformLocation("project"), 1, false, &projectTransform[0])
 
@@ -171,10 +252,8 @@ func programLoop(window *win.Window) error {
 		gl.Uniform3f(program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
 		gl.Uniform3f(program.GetUniformLocation("lightPos"), camera.Position().X(), camera.Position().Y(), camera.Position().Z())
 
-		//	gfx.Render(model, camTransform, projectTransform)
-		for _, chunk := range chunks {
+		for _, chunk := range renderList{
 			gfx.Render(*(chunk.Model), camTransform, projectTransform, camera.Position())
-
 		}
 
 		textureBranches.Bind(gl.TEXTURE1)

@@ -11,13 +11,13 @@ out vec4 color;
 uniform vec3 lightColor;
 uniform sampler2D currentTexture;
 uniform int textureId;
-uniform float near; 
-uniform float far; 
-  
-float LinearizeDepth(float depth) 
+uniform float near;
+uniform float far;
+
+float LinearizeDepth(float depth)
 {
-    float z = depth * 2.0 - 1.0; // back to NDC 
-    return (2.0 * near * far) / (far + near - z * (far - near));	
+    float z = depth * 2.0 - 1.0; // back to NDC
+    return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
 void main()
@@ -53,16 +53,9 @@ void main()
 
 	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
 
-	if(textureId != 0){
-		vec4 texColor = texture(currentTexture, TexCoord);
-		if(texColor.a < 0.1)
-					discard;
-		color = mix(texColor, vec4(result, 1.0f), 0.5);
-	} else{
-		color = vec4(result, 1.0f);
-	}
+	color = vec4(result, 1.0f);
 
 	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     //color = mix(color, vec4(vec3(depth), 1.0), 0.5);
-	
+
 }
