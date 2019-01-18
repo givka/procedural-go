@@ -34,12 +34,12 @@ type Model struct {
 	LoadingData  *ModelData
 }
 
-type ModelData struct{
-	Vertices []float32
+type ModelData struct {
+	Vertices     []float32
 	Connectivity []uint32
 }
 
-func FillModelData(mesh *Mesh) *ModelData{
+func FillModelData(mesh *Mesh) *ModelData {
 	data := ModelData{}
 	data.Vertices = make([]float32, (3+3+4+2)*len(mesh.Vertices))
 
@@ -72,7 +72,7 @@ func FillModelData(mesh *Mesh) *ModelData{
 	return &data
 }
 
-func LoadModelData(model *Model){
+func LoadModelData(model *Model) {
 	var VAO uint32
 	var VBO uint32
 	var IndexBO uint32
@@ -113,7 +113,7 @@ func LoadModelData(model *Model){
 	gl.BindVertexArray(0)
 
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBO)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, (len(model.LoadingData.Connectivity)*4), gl.Ptr(model.LoadingData.Connectivity), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, (len(model.LoadingData.Connectivity) * 4), gl.Ptr(model.LoadingData.Connectivity), gl.STATIC_DRAW)
 
 	gl.BindVertexArray(0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
@@ -126,9 +126,39 @@ func LoadModelData(model *Model){
 	model.TextureID = 0
 }
 
-func BuildModel(mesh Mesh) Model{
+func BuildModel(mesh Mesh) Model {
 	m := Model{}
 	m.LoadingData = FillModelData(&mesh)
 	LoadModelData(&m)
 	return m
+}
+
+func ModelToInstanceModel(m *Model, transforms []mgl32.Mat4) {
+	sizeFloat := 4 // 32 bits , 4 bytes
+	sizeMat4 := 4 * 4 * sizeFloat
+	sizeVec4 := 4 * sizeFloat
+
+	var VBO uint32
+	gl.GenBuffers(1, &VBO)
+	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
+	gl.BufferData(gl.ARRAY_BUFFER, len(transforms)*sizeMat4, gl.Ptr(transforms), gl.STATIC_DRAW)
+
+	VAO := m.VAO
+	gl.BindVertexArray(VAO)
+
+	gl.EnableVertexAttribArray(4)
+	gl.VertexAttribPointer(4, 4, gl.FLOAT, false, int32(4*sizeVec4), gl.PtrOffset(0))
+	gl.EnableVertexAttribArray(5)
+	gl.VertexAttribPointer(5, 4, gl.FLOAT, false, int32(4*sizeVec4), gl.PtrOffset((sizeVec4)))
+	gl.EnableVertexAttribArray(6)
+	gl.VertexAttribPointer(6, 4, gl.FLOAT, false, int32(4*sizeVec4), gl.PtrOffset((2 * sizeVec4)))
+	gl.EnableVertexAttribArray(7)
+	gl.VertexAttribPointer(7, 4, gl.FLOAT, false, int32(4*sizeVec4), gl.PtrOffset((3 * sizeVec4)))
+
+	gl.VertexAttribDivisor(4, 1)
+	gl.VertexAttribDivisor(5, 1)
+	gl.VertexAttribDivisor(6, 1)
+	gl.VertexAttribDivisor(7, 1)
+
+	gl.BindVertexArray(0)
 }

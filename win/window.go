@@ -4,8 +4,9 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"../ctx"
 
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 )
 
@@ -29,6 +30,8 @@ func (w *Window) InputManager() *InputManager {
 func resizeCallback(w *glfw.Window, width int, height int) {
 	// hack for HiDPI displays
 	ww, hh := w.GetFramebufferSize()
+	ctx.SetWidth(ww)
+	ctx.SetHeight(hh)
 	gl.Viewport(0, 0, int32(ww), int32(hh))
 }
 

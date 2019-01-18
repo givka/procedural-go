@@ -114,3 +114,22 @@ func getGlError(glHandle uint32, checkTrueParam uint32, getObjIvFn getObjIv,
 
 	return nil
 }
+
+func NewProgramFromVertFrag(shaderFileName string) (*Program, error) {
+	vertShader, err := NewShaderFromFile("data/shaders/"+shaderFileName+"/"+shaderFileName+".vert", gl.VERTEX_SHADER)
+	if err != nil {
+		return nil, err
+	}
+
+	fragShader, err := NewShaderFromFile("data/shaders/"+shaderFileName+"/"+shaderFileName+".frag", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return nil, err
+	}
+
+	program, err := NewProgram(vertShader, fragShader)
+	if err != nil {
+		return nil, err
+	}
+
+	return program, nil
+}

@@ -1,28 +1,23 @@
 package veg
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"strings"
 
 	"../gfx"
+	"../ter"
 
+	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-var rules = []string{
-	"F[-F]F[+F][F]",
-	"F[+FF]F[-F]",
-	"F[+F][-FF]F",
-	"F[+F]F[-F]F",
-	"F[-F+F]F[+F]",
-}
+var (
+	uniqueTreesHQ []*Tree
+	uniqueTreesLQ []*Tree
+)
 
-func Rules() []string {
-	return rules
-}
-
-// rule: "F[+F]F[-F]F",
 type Tree struct {
 	grammar       string
 	angle         float32
@@ -41,14 +36,34 @@ type Branch struct {
 	position mgl32.Vec3
 }
 
-func CreateTree(ruleIndex int, position mgl32.Vec3) *Tree {
+type InstanceTree struct {
+	Parent     *Tree
+	Transforms []mgl32.Mat4
+}
 
+func initialiseParentTrees() {
+	rules := []string{
+		"F[+FF]F[-F]",
+		"F[-F]F[+F][F]",
+		"F[+F][-FF]F",
+		"F[+F]F[-F]F",
+		"F[-F+F]F[+F]",
+	}
+
+	for _, rule := range rules {
+		uniqueTreesHQ = append(uniqueTreesHQ, createTreeHQ(rule))
+	}
+
+	// for now, only one model of LQ tree
+	uniqueTreesLQ = append(uniqueTreesLQ, createTreeLQ())
+}
+
+func createTreeHQ(rule string) *Tree {
 	tree := &Tree{
-		rule:     rules[ruleIndex],
-		angle:    15.0 + rand.Float32()*15.0,
-		grammar:  "F",
-		axiom:    "F",
-		position: position,
+		rule:    rule,
+		angle:   15.0 + rand.Float32()*15.0,
+		grammar: "F",
+		axiom:   "F",
 	}
 
 	for index := 0; index < 2; index++ {
@@ -57,10 +72,78 @@ func CreateTree(ruleIndex int, position mgl32.Vec3) *Tree {
 
 	tree.generateFromGrammar()
 
+	fmt.Println(tree.rule, "Tris count:", tree.BranchesModel.NbTriangles+tree.LeavesModel.NbTriangles)
+
 	return tree
 }
 
-func createLeavesModel(branches []Branch) *gfx.Model {
+func createTreeLQ() *Tree {
+	tree := &Tree{}
+	branches := []Branch{Branch{radius: 0.001, height: -0.05}}
+	tree.BranchesModel = createBranchesModel(branches)
+	branches = []Branch{Branch{radius: 0.001, height: -0.05, position: mgl32.Vec3{0, -0.05, 0}}}
+	tree.LeavesModel = createLeavesModel(branches, 0.05)
+	return tree
+}
+
+func GetSurroundingForests(instanceTrees []*InstanceTree, chunk *ter.Chunk, isHQ bool) []*InstanceTree {
+	if len(instanceTrees) == 0 {
+		if len(uniqueTreesHQ) == 0 {
+			initialiseParentTrees()
+		}
+		if isHQ {
+			for _, uniqueTreeHQ := range uniqueTreesHQ {
+				instanceTrees = append(instanceTrees, &InstanceTree{Parent: uniqueTreeHQ})
+			}
+		} else {
+			for _, uniqueTreeLQ := range uniqueTreesLQ {
+				instanceTrees = append(instanceTrees, &InstanceTree{Parent: uniqueTreeLQ})
+			}
+		}
+	}
+
+	CreateForest(chunk, isHQ, instanceTrees)
+
+	nbrTrees := 0
+
+	for _, instanceTree := range instanceTrees {
+		if len(instanceTree.Transforms) > 0 {
+			gfx.ModelToInstanceModel(instanceTree.Parent.BranchesModel, instanceTree.Transforms)
+			gfx.ModelToInstanceModel(instanceTree.Parent.LeavesModel, instanceTree.Transforms)
+			nbrTrees += len(instanceTree.Transforms)
+		}
+	}
+
+	return instanceTrees
+}
+
+func CreateForest(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) {
+	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
+	angle := float32(5.0 * math.Cos(glfw.GetTime()))
+	for x := 0; x < int(chunk.NBPoints)+1; x++ {
+		for z := 0; z < int(chunk.NBPoints)+1; z++ {
+			i := x + z*int(chunk.NBPoints+1)
+			posY := float32(chunk.Map[i])
+			height := -posY
+			if height < 0.40 || height > 0.50 {
+				continue
+			}
+
+			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
+			posZ := float32(chunk.Position[1])*float32(chunk.WorldSize) + float32(z)*step
+			transform := mgl32.Translate3D(posX, posY, posZ).Mul4(mgl32.Rotate3DY(posY * 360.0).Mat4())
+			transform = transform.Mul4(mgl32.Rotate3DX(mgl32.DegToRad(angle)).Mat4())
+			if !isHQ {
+				transform = transform.Mul4(mgl32.Scale3D(5, 5, 5))
+			}
+
+			index := rand.Intn(len(instanceTrees))
+			instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
+		}
+	}
+}
+
+func createLeavesModel(branches []Branch, customSizeLeaves ...float32) *gfx.Model {
 	mesh := gfx.Mesh{}
 	nbRadius := 2
 	index := uint32(0)
@@ -68,7 +151,11 @@ func createLeavesModel(branches []Branch) *gfx.Model {
 	for _, branch := range branches {
 		dr := 180.0 / (nbRadius)
 		offsetRotY := rand.Float32() * 360.0
-		sizeLeaves := branch.position.Y() / 6.0
+		sizeLeaves := (branch.position.Y()) / 2.0
+
+		if len(customSizeLeaves) > 0 {
+			sizeLeaves = customSizeLeaves[0]
+		}
 
 		for i := 0; i < nbRadius; i++ {
 			toAdd := rotateZ(branch.angleZ, mgl32.Vec3{0, branch.height / 2, 0})
@@ -98,14 +185,12 @@ func createLeavesModel(branches []Branch) *gfx.Model {
 	}
 
 	model := gfx.BuildModel(mesh)
-	translate := mgl32.Translate3D(0, 0, 0)
-	model.Transform = translate
 	return &model
 }
 
 func createBranchesModel(branches []Branch) *gfx.Model {
 	mesh := gfx.Mesh{}
-	nbRadius := 10
+	nbRadius := 3
 	dr := 2.0 * math.Pi / float64(nbRadius)
 	index := uint32(0)
 
@@ -136,8 +221,6 @@ func createBranchesModel(branches []Branch) *gfx.Model {
 	}
 
 	model := gfx.BuildModel(mesh)
-	translate := mgl32.Translate3D(0, 0, 0)
-	model.Transform = translate
 	return &model
 }
 
@@ -145,7 +228,7 @@ func (t *Tree) generateFromGrammar() {
 	rootBranches := []Branch{}
 	branches := []Branch{}
 	leaves := []Branch{}
-	branch := Branch{radius: 0.05, height: -0.5, position: t.position}
+	branch := Branch{radius: 0.005, height: -0.05}
 	addSomething := false
 
 	for _, letter := range strings.Split(t.grammar, "") {
