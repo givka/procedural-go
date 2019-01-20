@@ -73,7 +73,7 @@ func main() {
 	perlin.Quality = noiselib.QualitySTD
 
 	hmap = ter.HeightMap{
-		ChunkNBPoints:  64,
+		ChunkNBPoints:  512,
 		ChunkWorldSize: 12,
 		NbOctaves:      4,
 		Exponent:       1.0,
@@ -87,11 +87,11 @@ func main() {
 
 	hmap.MountainScaleBias = noiselib.DefaultScaleBias()
 	hmap.MountainScaleBias.SetSourceModule(0, hmap.MountainNoise)
-	hmap.MountainScaleBias.Scale = 1.8
+	hmap.MountainScaleBias.Scale = 2.3
 	hmap.MountainScaleBias.Bias = 0.0
 
 	hmap.PlainNoise = noiselib.DefaultBillow()
-	hmap.PlainNoise.Frequency = 0.02
+	hmap.PlainNoise.Frequency = 0.01
 
 	hmap.PlainScaleBias = noiselib.DefaultScaleBias()
 	hmap.PlainScaleBias.SetSourceModule(0, hmap.PlainNoise)
@@ -99,7 +99,7 @@ func main() {
 	hmap.PlainScaleBias.Bias = 0.5
 
 	hmap.TerrainType = noiselib.DefaultPerlin()
-	hmap.TerrainType.Frequency = 0.1
+	hmap.TerrainType.Frequency = 0.05
 	hmap.TerrainType.Persistence = 0.25
 
 	hmap.FinalTerrain = noiselib.DefaultSelect()
@@ -108,7 +108,8 @@ func main() {
 	hmap.FinalTerrain.SetSourceModule(2, hmap.TerrainType)
 	hmap.FinalTerrain.LowerBound = 0
 	hmap.FinalTerrain.UpperBound = 1000
-	hmap.FinalTerrain.SetEdgeFalloff(0.125)
+	hmap.FinalTerrain.SetEdgeFalloff(0.7)
+	//hmap.FinalTerrain.SetEdgeFalloff(0.125)
 
 	err := programLoop(window)
 	if err != nil {

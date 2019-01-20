@@ -4,6 +4,7 @@ import (
 	"../gfx"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
+	"math"
 )
 
 type HeightMap struct {
@@ -70,6 +71,11 @@ func CreateChunkPolyMesh(chunk Chunk) gfx.Mesh {
 			}else{
 				color = mgl32.Vec4{0.0, 0.0, 0.7, 1.0}
 			}
+			//fmt.Println(normal)
+			if(math.Abs(float64(normal.Y())) < 0.995){
+				color = mgl32.Vec4{0.4, 0.4, 0.4, 1.0}
+			}
+
 			texture := mgl32.Vec2{0.0, 0.0}
 
 			v := gfx.Vertex{
