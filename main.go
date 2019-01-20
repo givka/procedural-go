@@ -3,6 +3,7 @@ package main
 import (
 	//"fmt"
 
+	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -142,15 +143,15 @@ func programLoop(window *win.Window) error {
 	}
 	defer programChunk.Delete()
 
-	// textureBranches, err := gfx.NewTextureFromFile("data/textures/tree/branches.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
+	textureBranches, err := gfx.NewTextureFromFile("data/textures/tree/branches.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
 
-	// textureLeaves, err := gfx.NewTextureFromFile("data/textures/tree/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
+	textureLeaves, err := gfx.NewTextureFromFile("data/textures/tree/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
@@ -175,9 +176,9 @@ func programLoop(window *win.Window) error {
 
 	loadListChangeFlag := true
 
-	// var instanceTreesHQ []*veg.InstanceTree
-	// var instanceTreesLQ []*veg.InstanceTree
-
+	var instanceTreesHQ []*veg.InstanceTree
+	var instanceTreesLQ []*veg.InstanceTree
+	firstLoad := true
 	for !window.ShouldClose() {
 		//OpenGL loading for new chunks
 
@@ -189,11 +190,14 @@ func programLoop(window *win.Window) error {
 				chunk.Model.Program = programChunk
 				chunk.Loaded = true //should not need to change other flags if this one is set
 				loadListChangeFlag = true
-				// if currentChunk == chunk.Position {
-				// 	instanceTreesHQ = veg.GetSurroundingForests(instanceTreesHQ, chunk, true)
-				// } else {
-				// 	instanceTreesLQ = veg.GetSurroundingForests(instanceTreesLQ, chunk, false)
-				// }
+
+				if firstLoad {
+					if currentChunk == chunk.Position {
+						instanceTreesHQ = veg.GetSurroundingForests(instanceTreesHQ, chunk, true)
+					} else {
+						instanceTreesLQ = veg.GetSurroundingForests(instanceTreesLQ, chunk, false)
+					}
+				}
 			}
 		}
 
@@ -201,15 +205,22 @@ func programLoop(window *win.Window) error {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			loadListChangeFlag = true
 
-			// instanceTreesHQ = []*veg.InstanceTree{}
-			// instanceTreesLQ = []*veg.InstanceTree{}
-			// for _, chunk := range renderList {
-			// 	if currentChunk == chunk.Position {
-			// 		instanceTreesHQ = veg.GetSurroundingForests(instanceTreesHQ, chunk, true)
-			// 	} else {
-			// 		instanceTreesLQ = veg.GetSurroundingForests(instanceTreesLQ, chunk, false)
-			// 	}
-			// }
+			//FIXME: for now it deletes all trees and recalculate all
+			// need to recalculate only new ones and delete far chunks
+			firstLoad = false
+			start := time.Now()
+			visibilityList = ter.GetVisibilityList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, VIEW_DISTANCE)
+			renderList = ter.GetRenderList(&hmap, visibilityList, *camera)
+			instanceTreesHQ = []*veg.InstanceTree{}
+			instanceTreesLQ = []*veg.InstanceTree{}
+			for _, chunk := range renderList {
+				if currentChunk == chunk.Position {
+					instanceTreesHQ = veg.GetSurroundingForests(instanceTreesHQ, chunk, true)
+				} else {
+					instanceTreesLQ = veg.GetSurroundingForests(instanceTreesLQ, chunk, false)
+				}
+			}
+			fmt.Println("made all trees in :", time.Now().Sub(start))
 		}
 
 		if loadListChangeFlag {
@@ -234,16 +245,16 @@ func programLoop(window *win.Window) error {
 
 		scr.RenderChunks(renderList, camera, programChunk)
 
-		// textureBranches.Bind(gl.TEXTURE1)
-		// textureLeaves.Bind(gl.TEXTURE2)
-		// for _, instanceTreeHQ := range instanceTreesHQ {
-		// 	scr.RenderForest(instanceTreeHQ.Parent, camera, programTree, len(instanceTreeHQ.Transforms))
-		// }
-		// for _, instanceTreeLQ := range instanceTreesLQ {
-		// 	scr.RenderForest(instanceTreeLQ.Parent, camera, programTree, len(instanceTreeLQ.Transforms))
-		// }
-		// textureLeaves.UnBind()
-		// textureBranches.UnBind()
+		textureBranches.Bind(gl.TEXTURE1)
+		textureLeaves.Bind(gl.TEXTURE2)
+		for _, instanceTreeHQ := range instanceTreesHQ {
+			scr.RenderForest(instanceTreeHQ.Parent, camera, programTree, len(instanceTreeHQ.Transforms))
+		}
+		for _, instanceTreeLQ := range instanceTreesLQ {
+			scr.RenderForest(instanceTreeLQ.Parent, camera, programTree, len(instanceTreeLQ.Transforms))
+		}
+		textureLeaves.UnBind()
+		textureBranches.UnBind()
 	}
 
 	return nil
