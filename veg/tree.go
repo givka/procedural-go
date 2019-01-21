@@ -13,11 +13,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-var (
-	uniqueTreesHQ []*Tree
-	uniqueTreesLQ []*Tree
-)
-
 type Tree struct {
 	grammar       string
 	angle         float32
@@ -41,21 +36,14 @@ type InstanceTree struct {
 	Transforms []mgl32.Mat4
 }
 
-func initialiseParentTrees() {
-	rules := []string{
-		"F[+FF]F[-F]",
-		"F[-F]F[+F][F]",
-		"F[+F][-FF]F",
-		"F[+F]F[-F]F",
-		"F[-F+F]F[+F]",
-	}
-
-	for _, rule := range rules {
-		uniqueTreesHQ = append(uniqueTreesHQ, createTreeHQ(rule))
-	}
-
-	// for now, only one model of LQ tree
-	uniqueTreesLQ = append(uniqueTreesLQ, createTreeLQ())
+func CreateUniqueTrees() []*Tree {
+	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+FF]F[-F]"))
+	uniqueTrees = append(uniqueTrees, createTreeHQ("F[-F]F[+F][F]"))
+	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+F][-FF]F"))
+	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+F]F[-F]F"))
+	uniqueTrees = append(uniqueTrees, createTreeHQ("F[-F+F]F[+F]"))
+	uniqueTrees = append(uniqueTrees, createTreeLQ())
+	return uniqueTrees
 }
 
 func createTreeHQ(rule string) *Tree {
@@ -87,41 +75,23 @@ func createTreeLQ() *Tree {
 }
 
 func GetSurroundingForests(instanceTrees []*InstanceTree, chunk *ter.Chunk, isHQ bool) []*InstanceTree {
-	if len(instanceTrees) == 0 {
-		if len(uniqueTreesHQ) == 0 {
-			initialiseParentTrees()
-		}
-		if isHQ {
-			for _, uniqueTreeHQ := range uniqueTreesHQ {
-				instanceTrees = append(instanceTrees, &InstanceTree{Parent: uniqueTreeHQ})
-			}
-		} else {
-			for _, uniqueTreeLQ := range uniqueTreesLQ {
-				instanceTrees = append(instanceTrees, &InstanceTree{Parent: uniqueTreeLQ})
-			}
-		}
-	}
-
-	CreateForest(chunk, isHQ, instanceTrees)
-
-	nbrTrees := 0
+	instanceTrees = getInstanceTrees(chunk, isHQ, instanceTrees)
 
 	for _, instanceTree := range instanceTrees {
 		if len(instanceTree.Transforms) > 0 {
 			gfx.ModelToInstanceModel(instanceTree.Parent.BranchesModel, instanceTree.Transforms)
 			gfx.ModelToInstanceModel(instanceTree.Parent.LeavesModel, instanceTree.Transforms)
-			nbrTrees += len(instanceTree.Transforms)
 		}
 	}
-
 	return instanceTrees
 }
 
-func CreateForest(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) {
+func getInstanceTrees(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) []*InstanceTree {
 	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
 	angle := float32(5.0 * math.Cos(glfw.GetTime()))
-	for x := 0; x < int(chunk.NBPoints)+1; x+= 10 {
-		for z := 0; z < int(chunk.NBPoints)+1; z+= 10 {
+
+	for x := 0; x < int(chunk.NBPoints)+1; x += int(chunk.NBPoints / 32) {
+		for z := 0; z < int(chunk.NBPoints)+1; z += int(chunk.NBPoints / 32) {
 			i := x + z*int(chunk.NBPoints+1)
 			posY := float32(chunk.Map[i])
 			if posY < 0.0 || posY > 0.10 {
@@ -131,13 +101,17 @@ func CreateForest(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) {
 			posZ := float32(chunk.Position[1])*float32(chunk.WorldSize) + float32(z)*step
 			transform := mgl32.Translate3D(posX, -2*posY, posZ).Mul4(mgl32.Rotate3DY(posY * 360.0).Mat4())
 			transform = transform.Mul4(mgl32.Rotate3DX(mgl32.DegToRad(angle)).Mat4())
+			index := 0
 			if !isHQ {
 				transform = transform.Mul4(mgl32.Scale3D(5, 5, 5))
+				index = len(instanceTrees) - 1
+			} else {
+				index = rand.Intn(len(instanceTrees) - 1)
 			}
-			index := rand.Intn(len(instanceTrees))
 			instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
 		}
 	}
+	return instanceTrees
 }
 
 func createLeavesModel(branches []Branch, customSizeLeaves ...float32) *gfx.Model {
