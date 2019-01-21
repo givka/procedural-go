@@ -48,6 +48,23 @@ float LinearizeDepth(float depth)
 
 void main()
 {
+    vec4 computedColor;
+    float coeffs[5] = float[5](0.0, 0.0, 0.0, 0.0, 0.0);
+    setTextureCoefficients(coeffs);
+    if(textureId != 0){
+    	computedColor =
+    	coeffs[0] * texture(snowTexture, TexCoord)
+    	+ coeffs[1] * texture(rockTexture, TexCoord)
+    	+ coeffs[2] * texture(dirtTexture, TexCoord)
+    	+ coeffs[3] * texture(grassTexture, TexCoord)
+    	+ coeffs[4] * texture(sandTexture, TexCoord);
+    	if(computedColor.a < 0.1)
+    		discard;
+    } else{
+    		computedColor = MatColor;
+    }
+
+
 	// affects diffuse and specular lighting
 	float lightPower = 1.0f;
 
@@ -77,25 +94,9 @@ void main()
 	float spec = pow(max(dot(dirToView, reflectDir), 0.0), shininess);
 	vec3 specularLight = lightPower * specularStrength * spec * distIntensityDecay * lightColor;
 
-	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
+	vec3 result = (diffuseLight + specularLight + ambientLight) * computedColor.xyz;
 
-    float coeffs[5] = float[5](0.0, 0.0, 0.0, 0.0, 0.0);
-    setTextureCoefficients(coeffs);
-
-    if(textureId != 0){
-    	vec4 texColor =
-    	coeffs[0] * texture(snowTexture, TexCoord)
-    	+ coeffs[1] * texture(rockTexture, TexCoord)
-    	+ coeffs[2] * texture(dirtTexture, TexCoord)
-    	+ coeffs[3] * texture(grassTexture, TexCoord)
-    	+ coeffs[4] * texture(sandTexture, TexCoord);
-    	if(texColor.a < 0.1)
-    		discard;
-    	color = mix(texColor, vec4(result, 1.0f), 0.5);
-    } else{
-    		color = vec4(result, 1.0f);
-    }
-
+    color = vec4(result, 1.0f);
 	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     color = mix(color, vec4(vec3(depth), 1.0), 0.5);
 
