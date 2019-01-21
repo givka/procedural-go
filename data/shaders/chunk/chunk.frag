@@ -91,7 +91,7 @@ void main()
     	+ coeffs[4] * texture(sandTexture, TexCoord);
     	if(texColor.a < 0.1)
     		discard;
-    	color = mix(texColor, vec4(result, 1.0f), 0.1);
+    	color = mix(texColor, vec4(result, 1.0f), 0.5);
     } else{
     		color = vec4(result, 1.0f);
     }
