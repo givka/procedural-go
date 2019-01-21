@@ -134,6 +134,10 @@ func BuildModel(mesh Mesh) Model {
 }
 
 func ModelToInstanceModel(m *Model, transforms []mgl32.Mat4) {
+	if len(transforms) == 0 {
+		return
+	}
+
 	sizeFloat := 4 // 32 bits , 4 bytes
 	sizeMat4 := 4 * 4 * sizeFloat
 	sizeVec4 := 4 * sizeFloat

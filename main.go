@@ -3,7 +3,6 @@ package main
 import (
 	//"fmt"
 
-	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -29,8 +28,6 @@ var hmap ter.HeightMap
 var trees []*veg.Tree
 
 var chunks []*ter.Chunk
-
-var NBChunks uint = 2
 
 var VIEW_DISTANCE = 4
 var LOAD_DISTANCE = 4
@@ -175,10 +172,9 @@ func programLoop(window *win.Window) error {
 	}
 
 	loadListChangeFlag := true
-
-	var instanceTreesHQ []*veg.InstanceTree
-	var instanceTreesLQ []*veg.InstanceTree
+	gaia := veg.InitialiseVegetation(float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints))
 	firstLoad := true
+
 	for !window.ShouldClose() {
 		//OpenGL loading for new chunks
 
@@ -190,13 +186,8 @@ func programLoop(window *win.Window) error {
 				chunk.Model.Program = programChunk
 				chunk.Loaded = true //should not need to change other flags if this one is set
 				loadListChangeFlag = true
-
 				if firstLoad {
-					if currentChunk == chunk.Position {
-						instanceTreesHQ = veg.GetSurroundingForests(instanceTreesHQ, chunk, true)
-					} else {
-						instanceTreesLQ = veg.GetSurroundingForests(instanceTreesLQ, chunk, false)
-					}
+					gaia.CreateChunkVegetation(chunk, currentChunk)
 				}
 			}
 		}
@@ -205,22 +196,13 @@ func programLoop(window *win.Window) error {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			loadListChangeFlag = true
 
-			//FIXME: for now it deletes all trees and recalculate all
-			// need to recalculate only new ones and delete far chunks
 			firstLoad = false
-			start := time.Now()
+			loadList = ter.GetLoadList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, LOAD_DISTANCE)
 			visibilityList = ter.GetVisibilityList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, VIEW_DISTANCE)
-			renderList = ter.GetRenderList(&hmap, visibilityList, *camera)
-			instanceTreesHQ = []*veg.InstanceTree{}
-			instanceTreesLQ = []*veg.InstanceTree{}
+			gaia.ResetVegetation()
 			for _, chunk := range renderList {
-				if currentChunk == chunk.Position {
-					instanceTreesHQ = veg.GetSurroundingForests(instanceTreesHQ, chunk, true)
-				} else {
-					instanceTreesLQ = veg.GetSurroundingForests(instanceTreesLQ, chunk, false)
-				}
+				gaia.CreateChunkVegetation(chunk, currentChunk)
 			}
-			fmt.Println("made all trees in :", time.Now().Sub(start))
 		}
 
 		if loadListChangeFlag {
@@ -247,14 +229,10 @@ func programLoop(window *win.Window) error {
 
 		textureBranches.Bind(gl.TEXTURE1)
 		textureLeaves.Bind(gl.TEXTURE2)
-		for _, instanceTreeHQ := range instanceTreesHQ {
-			scr.RenderForest(instanceTreeHQ.Parent, camera, programTree, len(instanceTreeHQ.Transforms))
-		}
-		for _, instanceTreeLQ := range instanceTreesLQ {
-			scr.RenderForest(instanceTreeLQ.Parent, camera, programTree, len(instanceTreeLQ.Transforms))
-		}
-		textureLeaves.UnBind()
+		scr.RenderVegetation(gaia, camera, programTree)
 		textureBranches.UnBind()
+		textureLeaves.UnBind()
+
 	}
 
 	return nil

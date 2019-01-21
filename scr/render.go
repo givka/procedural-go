@@ -20,6 +20,31 @@ func RenderChunks(chunks []*ter.Chunk, camera *cam.FpsCamera, program *gfx.Progr
 	}
 }
 
+func RenderVegetation(g *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program) {
+	speed := 2.5
+	amp := float32(2.5)
+	angle := mgl32.DegToRad(amp * float32(math.Cos(speed*glfw.GetTime())))
+	transform := mgl32.Rotate3DX(angle).Mul3(mgl32.Rotate3DX(angle)).Mat4()
+
+	g.InstanceGrass.Model.Program = program
+	g.InstanceGrass.Model.Transform = transform
+
+	RenderInstances(g.InstanceGrass.Model, camera, len(g.InstanceGrass.Transforms))
+
+	for _, instanceTree := range g.InstanceTrees {
+		instanceTree.Parent.BranchesModel.Program = program
+		instanceTree.Parent.BranchesModel.TextureID = gl.TEXTURE1
+		instanceTree.Parent.BranchesModel.Transform = transform
+		RenderInstances(instanceTree.Parent.BranchesModel, camera, len(instanceTree.Transforms))
+
+		instanceTree.Parent.LeavesModel.Program = program
+		instanceTree.Parent.LeavesModel.TextureID = gl.TEXTURE2
+		instanceTree.Parent.LeavesModel.Transform = transform
+		RenderInstances(instanceTree.Parent.LeavesModel, camera, len(instanceTree.Transforms))
+	}
+
+}
+
 func RenderModel(m *gfx.Model, c *cam.FpsCamera) {
 	m.Program.Use()
 
@@ -33,7 +58,7 @@ func RenderModel(m *gfx.Model, c *cam.FpsCamera) {
 	gl.Uniform1f(m.Program.GetUniformLocation("near"), ctx.Near)
 	gl.Uniform1f(m.Program.GetUniformLocation("far"), ctx.Far)
 	gl.Uniform3f(m.Program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
-	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), c.Position().X(), c.Position().Y(), c.Position().Z())
+	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), c.Position().X(), -50.0, c.Position().Z())
 	gl.Uniform1i(m.Program.GetUniformLocation("textureId"), int32(m.TextureID))
 
 	gl.BindVertexArray(m.VAO)
@@ -43,34 +68,16 @@ func RenderModel(m *gfx.Model, c *cam.FpsCamera) {
 	gl.BindVertexArray(0)
 }
 
-func RenderForest(tree *veg.Tree, camera *cam.FpsCamera, program *gfx.Program, nbrTrees int) {
-	if nbrTrees == 0 {
+func RenderInstances(m *gfx.Model, camera *cam.FpsCamera, nbrInstances int) {
+	if nbrInstances == 0 {
 		return
 	}
-	speed := 2.5
-	amp := float32(2.5)
-	angle := mgl32.DegToRad(amp * float32(math.Cos(speed*glfw.GetTime())))
-	transform := mgl32.Rotate3DX(angle).Mul3(mgl32.Rotate3DX(angle)).Mat4()
 
-	tree.BranchesModel.Program = program
-	tree.BranchesModel.TextureID = gl.TEXTURE1
-	tree.BranchesModel.Transform = transform
-	RenderInstances(tree.BranchesModel, camera, nbrTrees)
-
-	tree.LeavesModel.Program = program
-	tree.LeavesModel.TextureID = gl.TEXTURE2
-	tree.LeavesModel.Transform = transform
-	RenderInstances(tree.LeavesModel, camera, nbrTrees)
-}
-
-func RenderInstances(m *gfx.Model, camera *cam.FpsCamera, nbrInstances int) {
 	m.Program.Use()
-
 	initialiseUniforms(m, camera)
-
 	gl.BindVertexArray(m.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
-	gl.DrawElementsInstanced(gl.TRIANGLES, m.NbTriangles*3, gl.UNSIGNED_INT, nil, int32(nbrInstances))
+	gl.DrawElementsInstanced(gl.TRIANGLES, m.NbTriangles, gl.UNSIGNED_INT, nil, int32(nbrInstances))
 	gl.BindVertexArray(0)
 }
 
@@ -86,7 +93,7 @@ func initialiseUniforms(m *gfx.Model, camera *cam.FpsCamera) {
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("project"), 1, false, &project[0])
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("model"), 1, false, &m.Transform[0])
 	gl.Uniform3f(m.Program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
-	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), camera.Position().X(), camera.Position().Y(), camera.Position().Z())
+	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), camera.Position().X(), -50.0, camera.Position().Z())
 	gl.Uniform1i(m.Program.GetUniformLocation("textureId"), int32(m.TextureID))
 
 }
