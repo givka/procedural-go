@@ -172,8 +172,8 @@ func programLoop(window *win.Window) error {
 	}
 
 	loadListChangeFlag := true
+	currentChunkChanged := false
 	gaia := veg.InitialiseVegetation(float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints))
-	firstLoad := true
 
 	for !window.ShouldClose() {
 		//OpenGL loading for new chunks
@@ -186,23 +186,14 @@ func programLoop(window *win.Window) error {
 				chunk.Model.Program = programChunk
 				chunk.Loaded = true //should not need to change other flags if this one is set
 				loadListChangeFlag = true
-				if firstLoad {
-					gaia.CreateChunkVegetation(chunk, currentChunk)
-				}
+				gaia.CreateChunkVegetation(chunk, currentChunk)
 			}
 		}
 
 		if currentChunk != getCurrentChunkFromCam(*camera, &hmap) {
 			currentChunk = getCurrentChunkFromCam(*camera, &hmap)
 			loadListChangeFlag = true
-
-			firstLoad = false
-			loadList = ter.GetLoadList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, LOAD_DISTANCE)
-			visibilityList = ter.GetVisibilityList(&hmap, mgl32.Vec2{camera.Position().X(), camera.Position().Z()}, VIEW_DISTANCE)
-			gaia.ResetVegetation()
-			for _, chunk := range renderList {
-				gaia.CreateChunkVegetation(chunk, currentChunk)
-			}
+			currentChunkChanged = true
 		}
 
 		if loadListChangeFlag {
@@ -219,6 +210,14 @@ func programLoop(window *win.Window) error {
 		}
 
 		renderList = ter.GetRenderList(&hmap, visibilityList, *camera)
+
+		if currentChunkChanged {
+			gaia.ResetVegetation()
+			for _, chunk := range renderList {
+				gaia.CreateChunkVegetation(chunk, currentChunk)
+			}
+			currentChunkChanged = false
+		}
 
 		window.StartFrame()
 		camera.Update(window.SinceLastFrame())
