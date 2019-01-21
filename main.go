@@ -57,6 +57,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	glfw.WindowHint(glfw.Samples, 8)
 
 	window := win.NewWindow(ctx.Width(), ctx.Height(), "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", false)
 
@@ -64,6 +65,8 @@ func main() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
+
+	gl.Enable(gl.MULTISAMPLE)
 
 	var perlin = noiselib.DefaultPerlin()
 	perlin.Seed = 0 * int(time.Now().Unix())
