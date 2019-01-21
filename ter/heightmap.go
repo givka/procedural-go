@@ -32,7 +32,7 @@ func getMapValue(heightMap *HeightMap, position [2] float64) float64{
 	return heightMap.FinalTerrain.GetValue(position[0], 0, position[1])
 }
 
-func CreateChunkPolyMesh(chunk Chunk) gfx.Mesh {
+func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer) gfx.Mesh {
 	mesh := gfx.Mesh{}
 	size := int(chunk.NBPoints)
 
@@ -40,6 +40,7 @@ func CreateChunkPolyMesh(chunk Chunk) gfx.Mesh {
 
 	//first add all vertices
 
+	var textureID uint32 = 0
 	for x:=0; x < size+1; x++{
 		for z:=0; z < size+1; z++ {
 			position := mgl32.Vec3{float32(x) * step, float32(-chunk.Map[x + z * (size+1)]), float32(z) * step}
@@ -60,29 +61,37 @@ func CreateChunkPolyMesh(chunk Chunk) gfx.Mesh {
 			height := -position.Y()
 			if(height > 1.5) {
 				color = mgl32.Vec4{1.0, 1.0, 1.0, 1.0}
+				textureID = textureContainer.SnowID
 			}else if(height > 0.8){
 				color = mgl32.Vec4{0.4, 0.4, 0.4, 1.0}
+				textureID = textureContainer.RockID
 			}else if(height > -0.2){
 				color = mgl32.Vec4{0.0, 0.4, 0.0, 1.0}
+				textureID = textureContainer.GrassID
 			}else if height > -0.5{
 				color = mgl32.Vec4{0.7, 0.7, 0.0, 1.0}
+				textureID = textureContainer.SandID
 			}else if height > -1{
 				color = mgl32.Vec4{0.0, 0.3, 0.5, 1.0}
+				//textureID = textureContainer.SnowID
 			}else{
 				color = mgl32.Vec4{0.0, 0.0, 0.7, 1.0}
+				//textureID = textureContainer.SnowID
 			}
 			//fmt.Println(normal)
 			if(math.Abs(float64(normal.Y())) < 0.995){
 				color = mgl32.Vec4{0.4, 0.4, 0.4, 1.0}
 			}
+			var textureScale float64 = 0.1
 
-			texture := mgl32.Vec2{0.0, 0.0}
-
+			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size)) / textureScale) , 1.0)  )}
+			//fmt.Println(texture)
 			v := gfx.Vertex{
 				Position: position,
 				Normal:   normal,
 				Color:    color,
-				Texture:  texture}
+				Texture:  texture,
+			}
 			mesh.Vertices = append(mesh.Vertices, v)
 		}
 	}
@@ -98,5 +107,6 @@ func CreateChunkPolyMesh(chunk Chunk) gfx.Mesh {
 		}
 	}
 
+	mesh.TextureID = textureID
 	return mesh
 }

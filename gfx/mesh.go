@@ -22,6 +22,7 @@ type Mesh struct {
 	Test         int
 	Vertices     []Vertex
 	Connectivity []TriangleConnectivity
+	TextureID    uint32
 }
 
 type Model struct {
@@ -37,6 +38,7 @@ type Model struct {
 type ModelData struct {
 	Vertices     []float32
 	Connectivity []uint32
+	TextureID    uint32
 }
 
 func FillModelData(mesh *Mesh) *ModelData {
@@ -69,6 +71,7 @@ func FillModelData(mesh *Mesh) *ModelData {
 		data.Connectivity[indice+2] = tri.U2
 	}
 
+	data.TextureID = mesh.TextureID
 	return &data
 }
 
@@ -123,7 +126,7 @@ func LoadModelData(model *Model) {
 	translate := mgl32.Translate3D(0, 0, 0)
 	model.Transform = translate
 	model.NbTriangles = int32(len(model.LoadingData.Connectivity))
-	model.TextureID = 0
+	model.TextureID = model.LoadingData.TextureID
 }
 
 func BuildModel(mesh Mesh) Model {

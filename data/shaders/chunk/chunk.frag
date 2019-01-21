@@ -5,14 +5,40 @@ in vec3 FragPos;
 in vec3 LightPos;
 in vec4 MatColor;
 in vec2 TexCoord;
+in float Height;
 
 out vec4 color;
 
 uniform vec3 lightColor;
 uniform sampler2D currentTexture;
-uniform int textureId;
 uniform float near;
+uniform int textureId;
 uniform float far;
+
+uniform sampler2D snowTexture; //0
+uniform sampler2D rockTexture; //1
+uniform sampler2D dirtTexture; //2
+uniform sampler2D grassTexture;//3
+uniform sampler2D sandTexture; //4
+
+void setTextureCoefficients(inout float coeffs[5])
+{
+/*    if(Height > 0)
+        coeffs[0] = 1.0;
+    else
+        coeffs[2] = 1.0;*/
+    if(Height > 3.0)
+        coeffs[0] = 1.0;
+    else if(Height > 1.5)
+        coeffs[1] = 1.0;
+    else if(Height > 1.0)
+        coeffs[2] = 1.0;
+    else if(Height > -0.2)
+        coeffs[3] = 1.0;
+    else if(Height > -1)
+        coeffs[4] = 1.0;
+    else coeffs[0] = 0.1;
+}
 
 float LinearizeDepth(float depth)
 {
@@ -53,7 +79,22 @@ void main()
 
 	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
 
-	color = vec4(result, 1.0f);
+    float coeffs[5] = float[5](0.0, 0.0, 0.0, 0.0, 0.0);
+    setTextureCoefficients(coeffs);
+
+    if(textureId != 0){
+    	vec4 texColor =
+    	coeffs[0] * texture(snowTexture, TexCoord)
+    	+ coeffs[1] * texture(rockTexture, TexCoord)
+    	+ coeffs[2] * texture(dirtTexture, TexCoord)
+    	+ coeffs[3] * texture(grassTexture, TexCoord)
+    	+ coeffs[4] * texture(sandTexture, TexCoord);
+    	if(texColor.a < 0.1)
+    		discard;
+    	color = mix(texColor, vec4(result, 1.0f), 0.1);
+    } else{
+    		color = vec4(result, 1.0f);
+    }
 
 	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     color = mix(color, vec4(vec3(depth), 1.0), 0.5);
