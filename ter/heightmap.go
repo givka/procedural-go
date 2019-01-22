@@ -2,7 +2,6 @@ package ter
 
 import (
 	"../gfx"
-	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
 	"math"
@@ -72,9 +71,6 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] + 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
 				}
 			}
-			if(up == 0){
-				fmt.Print("dfgdfjlkgfdjlkgdgjkldg")
-			}
 			normal := mgl32.Vec3{float32(left - right) / step, float32(down - up) / step, 2}
 			normal = normal.Normalize()
 
@@ -99,18 +95,10 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 				color = mgl32.Vec4{0.0, 0.0, 0.7, 1.0}
 				//textureID = textureContainer.SnowID
 			}
-			//fmt.Println(normal)
-			if(math.Abs(float64(normal.Y())) < 0.995){
-				color = mgl32.Vec4{0.4, 0.4, 0.4, 1.0}
-			}
 			var textureScale float64 = 0.1
 
 			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size)) / textureScale) , 1.0)  )}
-			//fmt.Println(texture)
 
-			if(x == size  || z == size){
-				fmt.Println(normal, texture)
-			}
 			v := gfx.Vertex{
 				Position: position,
 				Normal:   normal,
