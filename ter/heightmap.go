@@ -2,6 +2,7 @@ package ter
 
 import (
 	"../gfx"
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
 	"math"
@@ -32,7 +33,7 @@ func getMapValue(heightMap *HeightMap, position [2] float64) float64{
 	return heightMap.FinalTerrain.GetValue(position[0], 0, position[1])
 }
 
-func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer) gfx.Mesh {
+func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, heightMap *HeightMap) gfx.Mesh {
 	mesh := gfx.Mesh{}
 	size := int(chunk.NBPoints)
 
@@ -49,11 +50,31 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer) g
 			var down float64 = 0.0
 			var left float64 = 0.0
 			var right float64 = 0.0
-			if z > 0 		{up 	= -chunk.Map[x + (z-1) * (size+1)]}
-			if z < size		{down	= -chunk.Map[x + (z+1) * (size+1)]}
-			if x > 0 		{left 	= -chunk.Map[x - 1 + z * (size+1)]}
-			if x < size 	{right	= -chunk.Map[x + 1 + z * (size+1)]}
-
+			{
+				if z > 0 {
+					up = -chunk.Map[x+(z-1)*(size+1)]
+				} else {
+					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1] - 1)*float64(step))
+				}
+				if z < size {
+					down = -chunk.Map[x+(z+1)*(size+1)]
+				} else {
+					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1] + 1)*float64(step))
+				}
+				if x > 0 {
+					left = -chunk.Map[x-1+z*(size+1)]
+				} else {
+					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] - 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
+				}
+				if x < size {
+					right = -chunk.Map[x+1+z*(size+1)]
+				} else {
+					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] + 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
+				}
+			}
+			if(up == 0){
+				fmt.Print("dfgdfjlkgfdjlkgdgjkldg")
+			}
 			normal := mgl32.Vec3{float32(left - right) / step, float32(down - up) / step, 2}
 			normal = normal.Normalize()
 
@@ -86,6 +107,10 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer) g
 
 			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size)) / textureScale) , 1.0)  )}
 			//fmt.Println(texture)
+
+			if(x == size  || z == size){
+				fmt.Println(normal, texture)
+			}
 			v := gfx.Vertex{
 				Position: position,
 				Normal:   normal,
