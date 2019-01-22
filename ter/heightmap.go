@@ -54,7 +54,7 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer) g
 			if x > 0 		{left 	= -chunk.Map[x - 1 + z * (size+1)]}
 			if x < size 	{right	= -chunk.Map[x + 1 + z * (size+1)]}
 
-			normal := mgl32.Vec3{float32(right - left), -2, float32(down - up)}
+			normal := mgl32.Vec3{float32(left - right) / step, float32(down - up) / step, 2}
 			normal = normal.Normalize()
 
 			var color mgl32.Vec4

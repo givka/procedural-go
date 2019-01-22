@@ -66,7 +66,7 @@ void main()
 
 
 	// affects diffuse and specular lighting
-	float lightPower = 1.0f;
+	float lightPower = 5.0f;
 
 	// diffuse and specular intensity are affected by the amount of light they get based on how
 	// far they are from a light source (inverse square of distance)
