@@ -171,7 +171,7 @@ func LoadChunk(chunk *Chunk, heightMap *HeightMap, textureContainer *ChunkTextur
 	}
 
 	//build mesh
-	mesh := CreateChunkPolyMesh(*chunk, textureContainer)
+	mesh := CreateChunkPolyMesh(*chunk, textureContainer, heightMap)
 	//build model's vertex and connectivity arrays
 	chunk.Model = new (gfx.Model)
 	chunk.Model.LoadingData = gfx.FillModelData(&mesh)

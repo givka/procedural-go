@@ -29,7 +29,7 @@ void main()
     LightPos = lightPos;
 
     mat3 normMatrix = mat3(transpose(inverse(view))) * mat3(transpose(inverse(model)));
-    Normal = normal;
+    Normal = (transpose(inverse(model)) * vec4(normal, 1.0)).xyz;
     MatColor = color;
     TexCoord = texture;
     Height = -position.y;
