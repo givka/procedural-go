@@ -23,7 +23,9 @@ float LinearizeDepth(float depth)
 void main()
 {
 	// affects diffuse and specular lighting
-	float lightPower = 1.0f;
+  float lightPower = 2.0f;
+	float ambientStrength = 0.8f;
+
 
 	// diffuse and specular intensity are affected by the amount of light they get based on how
 	// far they are from a light source (inverse square of distance)
@@ -32,7 +34,6 @@ void main()
 	// see light-casters sample for the proper way
 	float distIntensityDecay = 1.0f / pow(distToLight, 2);
 
-	float ambientStrength = 0.3f;
 	vec3 ambientLight = ambientStrength * lightColor;
 
 	vec3 norm = normalize(Normal);

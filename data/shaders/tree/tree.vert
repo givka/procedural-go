@@ -20,13 +20,12 @@ out vec2 TexCoord;
 
 void main()
 {
-    gl_Position = project * view * transform * model * vec4(position, 1.0);
-    
-    mat3 normMatrix = mat3(transpose(inverse(view))) * mat3(transpose(inverse(transform)));
-    
-    Normal = normMatrix * normal;
-    FragPos = vec3(view * transform * vec4(position, 1.0));
-    LightPos = vec3(view * vec4(lightPos, 1.0));
+     gl_Position = project * view * transform * model * vec4(position, 1.0);
+    FragPos = position;
+    LightPos = lightPos;
+
+    mat3 normMatrix = mat3(transpose(inverse(view))) * mat3(transpose(inverse(model)));
+    Normal = (transpose(inverse(model)) * vec4(normal, 1.0)).xyz;
     MatColor = color;
     TexCoord = texture; 
 }

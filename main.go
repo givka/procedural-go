@@ -11,6 +11,7 @@ import (
 	"./ctx"
 	"./gfx"
 	"./scr"
+	"./sky"
 	"./ter"
 	"./veg"
 	"./win"
@@ -143,6 +144,12 @@ func programLoop(window *win.Window) error {
 	}
 	defer programChunk.Delete()
 
+	programSky, err := gfx.NewProgramFromVertFrag("sky")
+	if err != nil {
+		return err
+	}
+	defer programSky.Delete()
+
 	textureBranches, err := gfx.NewTextureFromFile("data/textures/tree/branches.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
 	if err != nil {
 		panic(err.Error())
@@ -153,12 +160,16 @@ func programLoop(window *win.Window) error {
 		panic(err.Error())
 	}
 
+	textureSky, err := gfx.NewTextureFromFile("data/textures/sky/tint.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
 	chunkTextures := ter.LoadChunkTextures()
 
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
 
-	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 45, 45, window.InputManager())
+	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 0, 0, window.InputManager())
 
 	currentChunk := getCurrentChunkFromCam(*camera, &hmap)
 
@@ -179,6 +190,7 @@ func programLoop(window *win.Window) error {
 	loadListChangeFlag := true
 	currentChunkChanged := false
 	gaia := veg.InitialiseVegetation(float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints))
+	dome := sky.CreateDome(programSky, gl.TEXTURE3)
 
 	for !window.ShouldClose() {
 		//OpenGL loading for new chunks
@@ -226,19 +238,24 @@ func programLoop(window *win.Window) error {
 
 		window.StartFrame()
 		camera.Update(window.SinceLastFrame())
-		gl.ClearColor(135.0/255.0, 206.0/255.0, 250.0/255.0, 1.0)
+		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) // depth buffer needed for DEPTH_TEST
 
+		dome.UpdateSun(camera)
+
 		chunkTextures.Bind()
-		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures)
+		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures, dome)
 		chunkTextures.Unbind()
 
 		textureBranches.Bind(gl.TEXTURE1)
 		textureLeaves.Bind(gl.TEXTURE2)
-		scr.RenderVegetation(gaia, camera, programTree)
+		scr.RenderVegetation(gaia, camera, programTree, dome)
 		textureBranches.UnBind()
 		textureLeaves.UnBind()
 
+		textureSky.Bind(gl.TEXTURE3)
+		scr.RenderSky(dome, camera)
+		textureSky.UnBind()
 	}
 
 	return nil
