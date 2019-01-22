@@ -11,6 +11,7 @@ import (
 	"./ctx"
 	"./gfx"
 	"./scr"
+	"./sky"
 	"./ter"
 	"./veg"
 	"./win"
@@ -71,7 +72,7 @@ func main() {
 	perlin.Quality = noiselib.QualitySTD
 
 	hmap = ter.HeightMap{
-		ChunkNBPoints:  512,
+		ChunkNBPoints:  64,
 		ChunkWorldSize: 12,
 		NbOctaves:      4,
 		Exponent:       1.0,
@@ -140,12 +141,23 @@ func programLoop(window *win.Window) error {
 	}
 	defer programChunk.Delete()
 
+	programSky, err := gfx.NewProgramFromVertFrag("sky")
+	if err != nil {
+		return err
+	}
+	defer programSky.Delete()
+
 	textureBranches, err := gfx.NewTextureFromFile("data/textures/tree/branches.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	textureLeaves, err := gfx.NewTextureFromFile("data/textures/tree/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	textureSky, err := gfx.NewTextureFromFile("data/textures/sky/tint.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -174,6 +186,7 @@ func programLoop(window *win.Window) error {
 	loadListChangeFlag := true
 	currentChunkChanged := false
 	gaia := veg.InitialiseVegetation(float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints))
+	dome := sky.CreateDome(programSky, gl.TEXTURE3)
 
 	for !window.ShouldClose() {
 		//OpenGL loading for new chunks
@@ -231,6 +244,10 @@ func programLoop(window *win.Window) error {
 		scr.RenderVegetation(gaia, camera, programTree)
 		textureBranches.UnBind()
 		textureLeaves.UnBind()
+
+		textureSky.Bind(gl.TEXTURE3)
+		scr.RenderSky(dome, camera)
+		textureSky.UnBind()
 
 	}
 

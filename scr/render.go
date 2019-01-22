@@ -6,6 +6,7 @@ import (
 	"../cam"
 	"../ctx"
 	"../gfx"
+	"../sky"
 	"../ter"
 	"../veg"
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -18,6 +19,32 @@ func RenderChunks(chunks []*ter.Chunk, camera *cam.FpsCamera, program *gfx.Progr
 		chunk.Model.Program = program
 		RenderModel(chunk.Model, camera)
 	}
+}
+
+func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
+	model := dome.Model
+	program := model.Program
+	program.Use()
+
+	u := float32(math.Pi*math.Cos(glfw.GetTime()/5.0) + math.Pi)
+	v := float32(math.Pi*math.Cos(glfw.GetTime()/5.0) + math.Pi)
+	sunPos := sky.GetSpherePosition(u, v, dome.Radius)
+	hours := float32(6.0*math.Cos(glfw.GetTime()/5.0) + 6.0)
+
+	pvm := getPVM(model, camera)
+
+	// fmt.Println(sunPos)
+
+	gl.UniformMatrix4fv(program.GetUniformLocation("pvm"), 1, false, &pvm[0])
+	gl.Uniform1f(program.GetUniformLocation("hours"), hours)
+	gl.Uniform3f(program.GetUniformLocation("sun_pos"), sunPos.X(), sunPos.Y(), sunPos.Z())
+	gl.Uniform1f(program.GetUniformLocation("radius"), dome.Radius)
+	gl.Uniform1i(program.GetUniformLocation("currentTexture"), int32(model.TextureID-gl.TEXTURE0))
+
+	gl.BindVertexArray(model.VAO)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.Connectivity)
+	gl.DrawElements(gl.TRIANGLES, model.NbTriangles*3, gl.UNSIGNED_INT, nil)
+	gl.BindVertexArray(0)
 }
 
 func RenderVegetation(g *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program) {
@@ -96,4 +123,11 @@ func initialiseUniforms(m *gfx.Model, camera *cam.FpsCamera) {
 	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), camera.Position().X(), -50.0, camera.Position().Z())
 	gl.Uniform1i(m.Program.GetUniformLocation("textureId"), int32(m.TextureID))
 
+}
+
+func getPVM(m *gfx.Model, camera *cam.FpsCamera) mgl32.Mat4 {
+	view := camera.GetTransform()
+	project := mgl32.Perspective(mgl32.DegToRad(ctx.Fov), float32(ctx.Width())/float32(ctx.Height()), ctx.Near, ctx.Far)
+	model := m.Transform
+	return project.Mul4(view).Mul4(model)
 }
