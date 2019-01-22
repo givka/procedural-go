@@ -55,6 +55,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	glfw.WindowHint(glfw.Samples, 8)
 
 	window := win.NewWindow(ctx.Width(), ctx.Height(), "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", false)
 
@@ -62,6 +63,8 @@ func main() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
+
+	gl.Enable(gl.MULTISAMPLE)
 
 	var perlin = noiselib.DefaultPerlin()
 	perlin.Seed = 0 * int(time.Now().Unix())
@@ -161,6 +164,7 @@ func programLoop(window *win.Window) error {
 	if err != nil {
 		panic(err.Error())
 	}
+	chunkTextures := ter.LoadChunkTextures()
 
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
@@ -180,7 +184,7 @@ func programLoop(window *win.Window) error {
 
 	//start workers
 	for i := 0; i < NUM_WORKERS; i++ {
-		go ter.ChunkLoadingWorker(loadQueue, &hmap)
+		go ter.ChunkLoadingWorker(loadQueue, &hmap, &chunkTextures)
 	}
 
 	loadListChangeFlag := true
@@ -237,7 +241,9 @@ func programLoop(window *win.Window) error {
 		gl.ClearColor(135.0/255.0, 206.0/255.0, 250.0/255.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) // depth buffer needed for DEPTH_TEST
 
-		scr.RenderChunks(renderList, camera, programChunk)
+		chunkTextures.Bind()
+		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures)
+		chunkTextures.Unbind()
 
 		textureBranches.Bind(gl.TEXTURE1)
 		textureLeaves.Bind(gl.TEXTURE2)

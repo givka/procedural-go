@@ -89,8 +89,9 @@ func GetSurroundingForests(instanceTrees []*InstanceTree, chunk *ter.Chunk, isHQ
 func getInstanceTrees(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) []*InstanceTree {
 	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
 	angle := float32(5.0 * math.Cos(glfw.GetTime()))
-	for x := 0; x < int(chunk.NBPoints)+1; x += int(chunk.NBPoints / 64) {
-		for z := 0; z < int(chunk.NBPoints)+1; z += int(chunk.NBPoints / 64) {
+
+	for x := 0; x < int(chunk.NBPoints)+1; x += int(chunk.NBPoints / 32) {
+		for z := 0; z < int(chunk.NBPoints)+1; z += int(chunk.NBPoints / 32) {
 			i := x + z*int(chunk.NBPoints+1)
 			posY := float32(chunk.Map[i])
 			if posY < 0.0 || posY > 0.10 {

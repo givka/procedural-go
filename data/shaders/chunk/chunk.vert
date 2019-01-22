@@ -16,7 +16,12 @@ out vec3 FragPos;
 out vec3 LightPos;
 out vec4 MatColor;
 out vec2 TexCoord;
+out float Height;
 
+int getTexture()
+{
+    return 1;
+}
 void main()
 {
     gl_Position = project * view * model * vec4(position, 1.0);
@@ -39,4 +44,5 @@ void main()
     Normal = normMatrix * normal;
     MatColor = color;
     TexCoord = texture;
+    Height = -position.y;
 }

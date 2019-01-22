@@ -5,7 +5,9 @@ import (
 	"../gfx"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
-	"sync/atomic"
+	"github.com/go-gl/gl/v4.1-core/gl"
+
+"sync/atomic"
 )
 
 type Chunk struct {
@@ -15,10 +17,73 @@ type Chunk struct {
 	Map       []float64
 	Model     *gfx.Model
 
+
 	//loading related flags
 	Loaded                  bool
 	Loading                 bool
 	AtomicNeedOpenGLLoading int32
+}
+
+type ChunkTextureContainer struct {
+	Dirt    *gfx.Texture
+	Sand    *gfx.Texture
+	Snow    *gfx.Texture
+	Grass   *gfx.Texture
+	Rock    *gfx.Texture
+
+	DirtID  uint32
+	SandID  uint32
+	SnowID  uint32
+	GrassID uint32
+	RockID  uint32
+}
+func LoadChunkTextures() ChunkTextureContainer{
+	container := ChunkTextureContainer{}
+	var err error
+
+	container.Dirt, err = gfx.NewTextureFromFile("data/textures/chunks/dirt.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+	container.Snow, err = gfx.NewTextureFromFile("data/textures/chunks/snow.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+	container.Grass, err = gfx.NewTextureFromFile("data/textures/chunks/grass.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+	container.Rock, err = gfx.NewTextureFromFile("data/textures/chunks/rock.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+	container.Sand, err = gfx.NewTextureFromFile("data/textures/chunks/sand.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	container.DirtID  = gl.TEXTURE3
+	container.SandID  = gl.TEXTURE4
+	container.SnowID  = gl.TEXTURE5
+	container.GrassID = gl.TEXTURE6
+	container.RockID  = gl.TEXTURE7
+	return container
+}
+
+func (container *ChunkTextureContainer) Bind() {
+	container.Dirt.Bind(container.DirtID)
+	container.Sand.Bind(container.SandID)
+	container.Snow.Bind(container.SnowID)
+	container.Grass.Bind(container.GrassID)
+	container.Rock.Bind(container.RockID)
+}
+
+func (container *ChunkTextureContainer) Unbind() {
+	container.Dirt.UnBind()
+	container.Sand.UnBind()
+	container.Snow.UnBind()
+	container.Grass.UnBind()
+	container.Rock.UnBind()
 }
 
 //relative coordinates
@@ -82,7 +147,7 @@ func GetLoadList(heightMap *HeightMap, worldPos mgl32.Vec2, radius int) []*Chunk
 	return loadList
 }
 
-func LoadChunk(chunk *Chunk, heightMap *HeightMap){
+func LoadChunk(chunk *Chunk, heightMap *HeightMap, textureContainer *ChunkTextureContainer) {
 
 	if chunk.Loaded {
 		return
@@ -106,17 +171,19 @@ func LoadChunk(chunk *Chunk, heightMap *HeightMap){
 	}
 
 	//build mesh
-	mesh := CreateChunkPolyMesh(*chunk)
+	mesh := CreateChunkPolyMesh(*chunk, textureContainer)
 	//build model's vertex and connectivity arrays
 	chunk.Model = new (gfx.Model)
 	chunk.Model.LoadingData = gfx.FillModelData(&mesh)
 	//Chunk loaded. Only opengl loading left.
 }
 
-func ChunkLoadingWorker(chunks <-chan *Chunk, heightMap *HeightMap){
+func ChunkLoadingWorker(chunks <-chan *Chunk, heightMap *HeightMap, textureContainer *ChunkTextureContainer) {
 	fmt.Println("Starting worker")
 	for chunk := range chunks {
-		LoadChunk(chunk, heightMap)
+		LoadChunk(chunk, heightMap, textureContainer)
 		atomic.StoreInt32(&chunk.AtomicNeedOpenGLLoading, 1) //flag as loaded
 	}
 }
+
+

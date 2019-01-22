@@ -64,14 +64,13 @@ func NewTexture(img image.Image, wrapR, wrapS int32) (*Texture, error) {
 
 	// set the texture wrapping/filtering options (applies to current bound texture obj)
 	// TODO-cs
+	gl.TexImage2D(target, 0, internalFmt, width, height, 0, format, pixType, dataPtr)
+	gl.GenerateMipmap(texture.target)
+
 	gl.TexParameteri(texture.target, gl.TEXTURE_WRAP_R, wrapR)
 	gl.TexParameteri(texture.target, gl.TEXTURE_WRAP_S, wrapS)
-	gl.TexParameteri(texture.target, gl.TEXTURE_MIN_FILTER, gl.LINEAR) // minification filter
+	gl.TexParameteri(texture.target, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR) // minification filter
 	gl.TexParameteri(texture.target, gl.TEXTURE_MAG_FILTER, gl.LINEAR) // magnification filter
-
-	gl.TexImage2D(target, 0, internalFmt, width, height, 0, format, pixType, dataPtr)
-
-	gl.GenerateMipmap(texture.handle)
 
 	return &texture, nil
 }
