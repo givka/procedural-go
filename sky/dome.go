@@ -3,23 +3,26 @@ package sky
 import (
 	"math"
 
+	"../cam"
 	"../gfx"
-
+	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
 type Dome struct {
-	Model  *gfx.Model
-	Radius float32
+	Model         *gfx.Model
+	Radius        float32
+	SunPosition   mgl32.Vec3
+	LightPosition mgl32.Vec3
 }
 
 func CreateDome(program *gfx.Program, textureId uint32) *Dome {
 	mesh := gfx.Mesh{}
-	nU := 10
-	nV := 10
+	nU := 100
+	nV := 100
 	radius := float32(50)
 	startU := float32(0)
-	startV := float32(0)
+	startV := float32(math.Pi / 2.0)
 	endU := float32(math.Pi * 2.0)
 	endV := float32(math.Pi)
 	stepU := (endU - startU) / float32(nU)
@@ -43,10 +46,10 @@ func CreateDome(program *gfx.Program, textureId uint32) *Dome {
 			} else {
 				vn = float32(j+1)*stepV + startV
 			}
-			p1 := GetSpherePosition(u, v, radius)
-			p2 := GetSpherePosition(u, vn, radius)
-			p3 := GetSpherePosition(un, v, radius)
-			p4 := GetSpherePosition(un, vn, radius)
+			p1 := getSpherePosition(u, v, radius)
+			p2 := getSpherePosition(u, vn, radius)
+			p3 := getSpherePosition(un, v, radius)
+			p4 := getSpherePosition(un, vn, radius)
 
 			normal := mgl32.Vec3{0, -2, 0}
 			normal = normal.Normalize()
@@ -68,13 +71,24 @@ func CreateDome(program *gfx.Program, textureId uint32) *Dome {
 	return &Dome{Model: &model, Radius: radius}
 }
 
-func GetSpherePosition(u float32, v float32, r float32) mgl32.Vec3 {
+func getSpherePosition(u float32, v float32, r float32) mgl32.Vec3 {
 	uu := float64(u)
 	vv := float64(v)
 
 	return mgl32.Vec3{
 		float32(math.Cos(uu)*math.Sin(vv)) * r,
-		float32(math.Cos(vv)) * r,
+		float32(math.Cos(vv)) * r / 4.0,
 		float32(math.Sin(uu)*math.Sin(vv)) * r,
 	}
+}
+
+func (d *Dome) UpdateSun(camera *cam.FpsCamera) {
+	hours := float32(6.0*math.Cos(glfw.GetTime()/5.0)+6.0) / 12.0
+
+	v := math.Pi*hours + math.Pi/2.0
+	d.SunPosition = getSpherePosition(0.0, v, d.Radius)
+	d.LightPosition = d.SunPosition
+	d.LightPosition[0] += camera.Position().X()
+	d.LightPosition[0] += -25.0
+	d.LightPosition[2] += camera.Position().Z()
 }

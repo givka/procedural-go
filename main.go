@@ -75,7 +75,7 @@ func main() {
 	perlin.Quality = noiselib.QualitySTD
 
 	hmap = ter.HeightMap{
-		ChunkNBPoints:  64,
+		ChunkNBPoints:  32,
 		ChunkWorldSize: 12,
 		NbOctaves:      4,
 		Exponent:       1.0,
@@ -241,20 +241,21 @@ func programLoop(window *win.Window) error {
 		gl.ClearColor(135.0/255.0, 206.0/255.0, 250.0/255.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) // depth buffer needed for DEPTH_TEST
 
+		dome.UpdateSun(camera)
+
 		chunkTextures.Bind()
-		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures)
+		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures, dome)
 		chunkTextures.Unbind()
 
 		textureBranches.Bind(gl.TEXTURE1)
 		textureLeaves.Bind(gl.TEXTURE2)
-		scr.RenderVegetation(gaia, camera, programTree)
+		scr.RenderVegetation(gaia, camera, programTree, dome)
 		textureBranches.UnBind()
 		textureLeaves.UnBind()
 
 		textureSky.Bind(gl.TEXTURE3)
 		scr.RenderSky(dome, camera)
 		textureSky.UnBind()
-
 	}
 
 	return nil

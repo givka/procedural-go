@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	uniqueTrees = []*Tree{}
+	uniqueTrees []*Tree
 	uniqueGrass *gfx.Model
 )
 

@@ -14,30 +14,23 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-func RenderChunks(chunks []*ter.Chunk, camera *cam.FpsCamera, program *gfx.Program, textureContainer *ter.ChunkTextureContainer) {
+func RenderChunks(chunks []*ter.Chunk, camera *cam.FpsCamera, program *gfx.Program, textureContainer *ter.ChunkTextureContainer, dome *sky.Dome) {
 	for _, chunk := range chunks {
 		chunk.Model.Program = program
-		RenderChunkModel(chunk.Model, camera, textureContainer)
+		RenderChunkModel(chunk.Model, camera, textureContainer, dome)
 	}
 }
 
 func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
 	model := dome.Model
+	model.Transform = mgl32.Translate3D(camera.Position().X(), 0, camera.Position().Z())
 	program := model.Program
 	program.Use()
 
-	u := float32(math.Pi*math.Cos(glfw.GetTime()/5.0) + math.Pi)
-	v := float32(math.Pi*math.Cos(glfw.GetTime()/5.0) + math.Pi)
-	sunPos := sky.GetSpherePosition(u, v, dome.Radius)
-	hours := float32(6.0*math.Cos(glfw.GetTime()/5.0) + 6.0)
-
 	pvm := getPVM(model, camera)
 
-	// fmt.Println(sunPos)
-
 	gl.UniformMatrix4fv(program.GetUniformLocation("pvm"), 1, false, &pvm[0])
-	gl.Uniform1f(program.GetUniformLocation("hours"), hours)
-	gl.Uniform3f(program.GetUniformLocation("sun_pos"), sunPos.X(), sunPos.Y(), sunPos.Z())
+	gl.Uniform3f(program.GetUniformLocation("sun_pos"), dome.SunPosition.X(), dome.SunPosition.Y(), dome.SunPosition.Z())
 	gl.Uniform1f(program.GetUniformLocation("radius"), dome.Radius)
 	gl.Uniform1i(program.GetUniformLocation("currentTexture"), int32(model.TextureID-gl.TEXTURE0))
 
@@ -47,7 +40,7 @@ func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
 	gl.BindVertexArray(0)
 }
 
-func RenderVegetation(g *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program) {
+func RenderVegetation(g *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program, dome *sky.Dome) {
 	speed := 2.5
 	amp := float32(2.5)
 	angle := mgl32.DegToRad(amp * float32(math.Cos(speed*glfw.GetTime())))
@@ -56,25 +49,25 @@ func RenderVegetation(g *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program) 
 	g.InstanceGrass.Model.Program = program
 	g.InstanceGrass.Model.Transform = transform
 
-	RenderInstances(g.InstanceGrass.Model, camera, len(g.InstanceGrass.Transforms))
+	RenderInstances(g.InstanceGrass.Model, camera, dome, len(g.InstanceGrass.Transforms))
 
 	for _, instanceTree := range g.InstanceTrees {
 		instanceTree.Parent.BranchesModel.Program = program
 		instanceTree.Parent.BranchesModel.TextureID = gl.TEXTURE1
 		instanceTree.Parent.BranchesModel.Transform = transform
-		RenderInstances(instanceTree.Parent.BranchesModel, camera, len(instanceTree.Transforms))
+		RenderInstances(instanceTree.Parent.BranchesModel, camera, dome, len(instanceTree.Transforms))
 
 		instanceTree.Parent.LeavesModel.Program = program
 		instanceTree.Parent.LeavesModel.TextureID = gl.TEXTURE2
 		instanceTree.Parent.LeavesModel.Transform = transform
-		RenderInstances(instanceTree.Parent.LeavesModel, camera, len(instanceTree.Transforms))
+		RenderInstances(instanceTree.Parent.LeavesModel, camera, dome, len(instanceTree.Transforms))
 	}
 
 }
 
-func RenderChunkModel(m *gfx.Model, c *cam.FpsCamera, textureContainer *ter.ChunkTextureContainer){
+func RenderChunkModel(m *gfx.Model, c *cam.FpsCamera, textureContainer *ter.ChunkTextureContainer, dome *sky.Dome) {
 	m.Program.Use()
-	initialiseUniforms(m, c)
+	initialiseUniforms(m, c, dome)
 	setChunkTextureUniforms(m, textureContainer)
 	gl.BindVertexArray(m.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
@@ -83,9 +76,9 @@ func RenderChunkModel(m *gfx.Model, c *cam.FpsCamera, textureContainer *ter.Chun
 	gl.BindVertexArray(0)
 }
 
-func RenderModel(m *gfx.Model, c *cam.FpsCamera) {
+func RenderModel(m *gfx.Model, c *cam.FpsCamera, dome *sky.Dome) {
 	m.Program.Use()
-	initialiseUniforms(m, c)
+	initialiseUniforms(m, c, dome)
 
 	gl.BindVertexArray(m.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
@@ -103,20 +96,20 @@ func setChunkTextureUniforms(m *gfx.Model, textureContainer *ter.ChunkTextureCon
 
 }
 
-func RenderInstances(m *gfx.Model, camera *cam.FpsCamera, nbrInstances int) {
+func RenderInstances(m *gfx.Model, camera *cam.FpsCamera, dome *sky.Dome, nbrInstances int) {
 	if nbrInstances == 0 {
 		return
 	}
 
 	m.Program.Use()
-	initialiseUniforms(m, camera)
+	initialiseUniforms(m, camera, dome)
 	gl.BindVertexArray(m.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
 	gl.DrawElementsInstanced(gl.TRIANGLES, m.NbTriangles, gl.UNSIGNED_INT, nil, int32(nbrInstances))
 	gl.BindVertexArray(0)
 }
 
-func initialiseUniforms(m *gfx.Model, camera *cam.FpsCamera) {
+func initialiseUniforms(m *gfx.Model, camera *cam.FpsCamera, dome *sky.Dome) {
 	view := camera.GetTransform()
 	project := mgl32.Perspective(mgl32.DegToRad(ctx.Fov),
 		float32(ctx.Width())/float32(ctx.Height()), ctx.Near, ctx.Far)
@@ -128,7 +121,7 @@ func initialiseUniforms(m *gfx.Model, camera *cam.FpsCamera) {
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("project"), 1, false, &project[0])
 	gl.UniformMatrix4fv(m.Program.GetUniformLocation("model"), 1, false, &m.Transform[0])
 	gl.Uniform3f(m.Program.GetUniformLocation("lightColor"), 1.0, 1.0, 1.0)
-	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), camera.Position().X(), -50.0, camera.Position().Z())
+	gl.Uniform3f(m.Program.GetUniformLocation("lightPos"), dome.LightPosition.X(), dome.LightPosition.Y(), dome.LightPosition.Z())
 	gl.Uniform1i(m.Program.GetUniformLocation("textureId"), int32(m.TextureID))
 
 }

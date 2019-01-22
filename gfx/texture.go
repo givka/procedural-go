@@ -70,7 +70,7 @@ func NewTexture(img image.Image, wrapR, wrapS int32) (*Texture, error) {
 	gl.TexParameteri(texture.target, gl.TEXTURE_WRAP_R, wrapR)
 	gl.TexParameteri(texture.target, gl.TEXTURE_WRAP_S, wrapS)
 	gl.TexParameteri(texture.target, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR) // minification filter
-	gl.TexParameteri(texture.target, gl.TEXTURE_MAG_FILTER, gl.LINEAR) // magnification filter
+	gl.TexParameteri(texture.target, gl.TEXTURE_MAG_FILTER, gl.LINEAR)               // magnification filter
 
 	return &texture, nil
 }
