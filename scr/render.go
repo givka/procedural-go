@@ -29,10 +29,9 @@ func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
 
 	pvm := getPVM(model, camera)
 
-	gl.UniformMatrix4fv(program.GetUniformLocation("pvm"), 1, false, &pvm[0])
-	gl.Uniform3f(program.GetUniformLocation("sun_pos"), dome.SunPosition.X(), dome.SunPosition.Y(), dome.SunPosition.Z())
-	gl.Uniform1f(program.GetUniformLocation("radius"), dome.Radius)
-	gl.Uniform1i(program.GetUniformLocation("currentTexture"), int32(model.TextureID-gl.TEXTURE0))
+	gl.UniformMatrix4fv(program.GetUniformLocation("u_pvm"), 1, false, &pvm[0])
+	gl.Uniform3f(program.GetUniformLocation("u_sun_pos"), dome.SunPosition.X(), dome.SunPosition.Y(), dome.SunPosition.Z())
+	gl.Uniform1i(program.GetUniformLocation("u_texture_tint"), int32(model.TextureID-gl.TEXTURE0))
 
 	gl.BindVertexArray(model.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.Connectivity)

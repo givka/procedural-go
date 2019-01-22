@@ -77,18 +77,16 @@ func getSpherePosition(u float32, v float32, r float32) mgl32.Vec3 {
 
 	return mgl32.Vec3{
 		float32(math.Cos(uu)*math.Sin(vv)) * r,
-		float32(math.Cos(vv)) * r / 4.0,
+		float32(math.Cos(vv)) * r,
 		float32(math.Sin(uu)*math.Sin(vv)) * r,
 	}
 }
 
 func (d *Dome) UpdateSun(camera *cam.FpsCamera) {
-	hours := float32(6.0*math.Cos(glfw.GetTime()/5.0)+6.0) / 12.0
-
-	v := math.Pi*hours + math.Pi/2.0
+	v := mgl32.DegToRad(float32(glfw.GetTime()) * 50.0)
 	d.SunPosition = getSpherePosition(0.0, v, d.Radius)
 	d.LightPosition = d.SunPosition
 	d.LightPosition[0] += camera.Position().X()
-	d.LightPosition[0] += -25.0
+	d.LightPosition[0] += -10.0
 	d.LightPosition[2] += camera.Position().Z()
 }
