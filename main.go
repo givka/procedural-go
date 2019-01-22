@@ -75,7 +75,7 @@ func main() {
 	perlin.Quality = noiselib.QualitySTD
 
 	hmap = ter.HeightMap{
-		ChunkNBPoints:  32,
+		ChunkNBPoints:  512,
 		ChunkWorldSize: 12,
 		NbOctaves:      4,
 		Exponent:       1.0,
