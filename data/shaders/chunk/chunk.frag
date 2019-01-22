@@ -23,19 +23,21 @@ uniform sampler2D sandTexture; //4
 
 void setTextureCoefficients(inout float coeffs[5])
 {
-/*    if(Height > 0)
+    if(Height > 1.4 && Normal.z > 0.9){
         coeffs[0] = 1.0;
-    else
-        coeffs[2] = 1.0;*/
-    if(Height > 3.0)
-        coeffs[0] = 1.0;
-    else if(Height > 1.5)
+        return;
+    }
+    if(Height > -0.5 && Normal.z > 0.9){
+            coeffs[3] = 1.0;
+            return;
+    }
+    if(Height > 1.5)
         coeffs[1] = 1.0;
-    else if(Height > 1.0)
+    else if(Height > -0.5)
         coeffs[2] = 1.0;
-    else if(Height > -0.2)
+/*    else if(Height > -0.1)
         coeffs[3] = 1.0;
-    else if(Height > -1)
+*/    else if(Height > -2.0)
         coeffs[4] = 1.0;
     else coeffs[0] = 0.1;
 }
