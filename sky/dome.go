@@ -22,7 +22,7 @@ func CreateDome(program *gfx.Program, textureId uint32) *Dome {
 	nV := 100
 	radius := float32(50)
 	startU := float32(0)
-	startV := float32(math.Pi / 2.0)
+	startV := float32(math.Pi / 4.0)
 	endU := float32(math.Pi * 2.0)
 	endV := float32(math.Pi)
 	stepU := (endU - startU) / float32(nU)
@@ -83,10 +83,11 @@ func getSpherePosition(u float32, v float32, r float32) mgl32.Vec3 {
 }
 
 func (d *Dome) UpdateSun(camera *cam.FpsCamera) {
-	v := mgl32.DegToRad(float32(glfw.GetTime()) * 50.0)
-	d.SunPosition = getSpherePosition(0.0, v, d.Radius)
-	d.LightPosition = d.SunPosition
-	d.LightPosition[0] += camera.Position().X()
-	d.LightPosition[0] += -10.0
-	d.LightPosition[2] += camera.Position().Z()
+	rotation := mgl32.Rotate3DX(mgl32.DegToRad(float32(glfw.GetTime() * 10.0)))
+	d.SunPosition = rotation.Mul3x1(mgl32.Vec3{0.0, d.Radius, 0.0})
+	d.LightPosition = mgl32.Vec3{
+		camera.Position().X() + d.SunPosition.X(),
+		d.SunPosition.Y() / 2.0,
+		camera.Position().X() + d.SunPosition.Z(),
+	}
 }

@@ -169,7 +169,7 @@ func programLoop(window *win.Window) error {
 	// ensure that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
 
-	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 45, 45, window.InputManager())
+	camera := cam.NewFpsCamera(mgl32.Vec3{0, -5, 0}, mgl32.Vec3{0, 1, 0}, 0, 0, window.InputManager())
 
 	currentChunk := getCurrentChunkFromCam(*camera, &hmap)
 
@@ -238,7 +238,7 @@ func programLoop(window *win.Window) error {
 
 		window.StartFrame()
 		camera.Update(window.SinceLastFrame())
-		gl.ClearColor(135.0/255.0, 206.0/255.0, 250.0/255.0, 1.0)
+		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) // depth buffer needed for DEPTH_TEST
 
 		dome.UpdateSun(camera)

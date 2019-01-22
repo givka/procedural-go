@@ -29,6 +29,9 @@ func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
 
 	pvm := getPVM(model, camera)
 
+	rotationStars := mgl32.Rotate3DX(-mgl32.DegToRad(float32(glfw.GetTime())))
+
+	gl.UniformMatrix3fv(program.GetUniformLocation("u_rot_stars"), 1, false, &rotationStars[0])
 	gl.UniformMatrix4fv(program.GetUniformLocation("u_pvm"), 1, false, &pvm[0])
 	gl.Uniform3f(program.GetUniformLocation("u_sun_pos"), dome.SunPosition.X(), dome.SunPosition.Y(), dome.SunPosition.Z())
 	gl.Uniform1i(program.GetUniformLocation("u_texture_tint"), int32(model.TextureID-gl.TEXTURE0))
