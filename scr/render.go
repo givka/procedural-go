@@ -105,6 +105,7 @@ func RenderInstances(m *gfx.Model, camera *cam.FpsCamera, dome *sky.Dome, nbrIns
 
 	m.Program.Use()
 	initialiseUniforms(m, camera, dome)
+	gl.Uniform1i(m.Program.GetUniformLocation("u_nbr_instances"), int32(nbrInstances))
 	gl.BindVertexArray(m.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
 	gl.DrawElementsInstanced(gl.TRIANGLES, m.NbTriangles, gl.UNSIGNED_INT, nil, int32(nbrInstances))
