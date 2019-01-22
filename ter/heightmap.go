@@ -71,7 +71,7 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] + 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
 				}
 			}
-			normal := mgl32.Vec3{float32(left - right) / step, float32(down - up) / step, 2}
+			normal := mgl32.Vec3{float32(left - right) / step, -2, float32(down - up) / step}
 			normal = normal.Normalize()
 
 			var color mgl32.Vec4
