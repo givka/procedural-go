@@ -32,7 +32,7 @@ void main()
     
     float nbr_instances = u_nbr_instances;
     float instance_id = gl_InstanceID;
-    float green = random(vec2(instance_id/nbr_instances));
-    MatColor = vec4(0.0, (green + 1.0) / 2.0, 0.0, 1.0);
+    float threshold = random(vec2(instance_id/nbr_instances * 500.0));
+    MatColor = mix(color, vec4(color.x, 0.25, color.z, 1.0), threshold);
 
 }
