@@ -53,10 +53,10 @@ func RenderVegetation(gaia *veg.Gaia, camera *cam.FpsCamera, program *gfx.Progra
 
 	RenderInstances(gaia.InstanceGrass.Model, camera, dome, len(gaia.InstanceGrass.Transforms))
 
-	for _, instanceTree := range gaia.InstanceTrees {
-		for index, instanceTreeType := range instanceTree {
+	for index, instanceTree := range gaia.InstanceTrees {
+		for indexType, instanceTreeType := range instanceTree {
 			var transform mgl32.Mat4
-			if index == 1 {
+			if indexType == 1 {
 				transform = transformBasic.Mul4(mgl32.Scale3D(5.0, 5.0, 5.0))
 			} else {
 				transform = transformBasic
@@ -66,8 +66,9 @@ func RenderVegetation(gaia *veg.Gaia, camera *cam.FpsCamera, program *gfx.Progra
 			instanceTreeType.BranchesModel.Transform = transform
 			RenderInstances(instanceTreeType.BranchesModel, camera, dome, len(instanceTreeType.Transforms))
 
+			textureID := gl.TEXTURE10 + index%7
 			instanceTreeType.LeavesModel.Program = program
-			instanceTreeType.LeavesModel.TextureID = gl.TEXTURE2
+			instanceTreeType.LeavesModel.TextureID = uint32(textureID)
 			instanceTreeType.LeavesModel.Transform = transform
 			RenderInstances(instanceTreeType.LeavesModel, camera, dome, len(instanceTreeType.Transforms))
 		}
