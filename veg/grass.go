@@ -4,39 +4,12 @@ import (
 	"math/rand"
 
 	"../gfx"
-	"../ter"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
 type InstanceGrass struct {
 	Model      *gfx.Model
 	Transforms []mgl32.Mat4
-}
-
-func GetSurroundingGrass(instance *InstanceGrass, chunk *ter.Chunk) *InstanceGrass {
-	instance.Transforms = getTransforms(chunk, instance.Transforms)
-
-	gfx.ModelToInstanceModel(instance.Model, instance.Transforms)
-
-	return instance
-}
-
-func getTransforms(chunk *ter.Chunk, transforms []mgl32.Mat4) []mgl32.Mat4 {
-	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
-	for x := 0; x < int(chunk.NBPoints)+1; x++ {
-		for z := 0; z < int(chunk.NBPoints)+1; z++ {
-			i := x + z*int(chunk.NBPoints+1)
-			posY := float32(chunk.Map[i])
-			if posY < 0.20 || posY > 0.30 {
-				continue
-			}
-			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
-			posZ := float32(chunk.Position[1])*float32(chunk.WorldSize) + float32(z)*step
-			transform := mgl32.Translate3D(posX, -2*posY, posZ).Mul4(mgl32.Rotate3DY(360.0 * rand.Float32()).Mat4())
-			transforms = append(transforms, transform)
-		}
-	}
-	return transforms
 }
 
 func CreateUniqueGrass(step float32) *gfx.Model {

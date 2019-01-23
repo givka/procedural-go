@@ -3,7 +3,9 @@ package main
 import (
 	//"fmt"
 
+	"fmt"
 	"log"
+	"math/rand"
 	"runtime"
 	"time"
 
@@ -30,8 +32,8 @@ var trees []*veg.Tree
 
 var chunks []*ter.Chunk
 
-var VIEW_DISTANCE = 4
-var LOAD_DISTANCE = 4
+var VIEW_DISTANCE int = 4
+var LOAD_DISTANCE int = 4
 var CHUNK_NB_POINTS uint32 = 512
 var NUM_WORKERS = 6
 
@@ -188,10 +190,15 @@ func programLoop(window *win.Window) error {
 		go ter.ChunkLoadingWorker(loadQueue, &hmap, &chunkTextures)
 	}
 
+	step := float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints)
+	veg.InitialiseVegetation(step)
+
 	loadListChangeFlag := true
 	currentChunkChanged := false
-	gaia := veg.InitialiseVegetation(float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints))
 	dome := sky.CreateDome(programSky, gl.TEXTURE3)
+
+	instanceGrass := veg.GetInstanceGrass()
+	instanceTrees := veg.GetInstanceTrees()
 
 	for !window.ShouldClose() {
 		//OpenGL loading for new chunks
@@ -204,7 +211,22 @@ func programLoop(window *win.Window) error {
 				chunk.Model.Program = programChunk
 				chunk.Loaded = true //should not need to change other flags if this one is set
 				loadListChangeFlag = true
-				gaia.CreateChunkVegetation(chunk, currentChunk)
+				start := time.Now()
+				instanceGrass.Transforms = append(instanceGrass.Transforms, chunk.GrassTransforms...)
+				gfx.ModelToInstanceModel(instanceGrass.Model, instanceGrass.Transforms)
+				for _, transform := range chunk.TreesTransforms {
+					index := rand.Intn(len(instanceTrees))
+					instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
+				}
+				for _, instanceTree := range instanceTrees {
+					gfx.ModelToInstanceModel(instanceTree.BranchesModel, instanceTree.Transforms)
+					gfx.ModelToInstanceModel(instanceTree.LeavesModel, instanceTree.Transforms)
+				}
+				fmt.Println(
+					"new chunk", time.Now().Sub(start),
+					"grass:", len(chunk.GrassTransforms),
+					"trees:", len(chunk.TreesTransforms),
+				)
 			}
 		}
 
@@ -230,10 +252,30 @@ func programLoop(window *win.Window) error {
 		renderList = ter.GetRenderList(&hmap, visibilityList, *camera)
 
 		if currentChunkChanged {
-			gaia.ResetVegetation()
-			for _, chunk := range renderList {
-				gaia.CreateChunkVegetation(chunk, currentChunk)
+			start := time.Now()
+			instanceGrass.Transforms = []mgl32.Mat4{}
+			for _, instanceTree := range instanceTrees {
+				instanceTree.Transforms = []mgl32.Mat4{}
 			}
+			for _, chunk := range renderList {
+				instanceGrass.Transforms = append(instanceGrass.Transforms, chunk.GrassTransforms...)
+				for _, transform := range chunk.TreesTransforms {
+					index := rand.Intn(len(instanceTrees))
+					instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
+				}
+			}
+			gfx.ModelToInstanceModel(instanceGrass.Model, instanceGrass.Transforms)
+			nbrTrees := 0
+			for _, instanceTree := range instanceTrees {
+				gfx.ModelToInstanceModel(instanceTree.BranchesModel, instanceTree.Transforms)
+				gfx.ModelToInstanceModel(instanceTree.LeavesModel, instanceTree.Transforms)
+				nbrTrees += len(instanceTree.Transforms)
+			}
+			fmt.Println(
+				"redraw all", time.Now().Sub(start),
+				"grass:", len(instanceGrass.Transforms),
+				"trees:", nbrTrees,
+			)
 			currentChunkChanged = false
 		}
 
@@ -245,14 +287,14 @@ func programLoop(window *win.Window) error {
 		dome.UpdateSun(camera)
 
 		chunkTextures.Bind()
-		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures, dome)
-		chunkTextures.Unbind()
-
 		textureBranches.Bind(gl.TEXTURE1)
 		textureLeaves.Bind(gl.TEXTURE2)
-		scr.RenderVegetation(gaia, camera, programTree, dome)
+		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures, dome)
+		chunkTextures.Unbind()
 		textureBranches.UnBind()
 		textureLeaves.UnBind()
+
+		scr.RenderVegetation(instanceGrass, instanceTrees, camera, programTree, dome)
 
 		textureSky.Bind(gl.TEXTURE3)
 		scr.RenderSky(dome, camera)
