@@ -97,9 +97,9 @@ func (container *ChunkTextureContainer) Unbind() {
 
 //relative coordinates
 func WorldToChunkCoordinates(hmap *HeightMap, world mgl32.Vec2) [2]int {
-	x := int(world.X()) / int(hmap.ChunkWorldSize)
-	y := int(world.Y()) / int(hmap.ChunkWorldSize)
-	return [2]int{x, y}
+	x := float64(world.X()) / float64(hmap.ChunkWorldSize)
+	y := float64(world.Y()) / float64(hmap.ChunkWorldSize)
+	return [2]int{int(math.Floor(x)), int(math.Floor(y))}
 }
 
 func ChunkToWorldCoordinates(hmap *HeightMap, chunk [2]int) mgl32.Vec2 {
