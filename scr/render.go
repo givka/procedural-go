@@ -46,26 +46,31 @@ func RenderVegetation(gaia *veg.Gaia, camera *cam.FpsCamera, program *gfx.Progra
 	speed := 2.5
 	amp := float32(2.5)
 	angle := mgl32.DegToRad(amp * float32(math.Cos(speed*glfw.GetTime())))
-	transform := mgl32.Rotate3DX(angle).Mul3(mgl32.Rotate3DX(angle)).Mat4()
+	transformBasic := mgl32.Rotate3DX(angle).Mul3(mgl32.Rotate3DX(angle)).Mat4()
 
 	gaia.InstanceGrass.Model.Program = program
-	gaia.InstanceGrass.Model.Transform = transform
+	gaia.InstanceGrass.Model.Transform = transformBasic
 
 	RenderInstances(gaia.InstanceGrass.Model, camera, dome, len(gaia.InstanceGrass.Transforms))
 
-	for index, instanceTree := range gaia.InstanceTrees {
-		if index == len(gaia.InstanceTrees)-1 {
-			transform = transform.Mul4(mgl32.Scale3D(5.0, 5.0, 5.0))
-		}
-		instanceTree.BranchesModel.Program = program
-		instanceTree.BranchesModel.TextureID = gl.TEXTURE1
-		instanceTree.BranchesModel.Transform = transform
-		RenderInstances(instanceTree.BranchesModel, camera, dome, len(instanceTree.Transforms))
+	for _, instanceTree := range gaia.InstanceTrees {
+		for index, instanceTreeType := range instanceTree {
+			var transform mgl32.Mat4
+			if index == 1 {
+				transform = transformBasic.Mul4(mgl32.Scale3D(5.0, 5.0, 5.0))
+			} else {
+				transform = transformBasic
+			}
+			instanceTreeType.BranchesModel.Program = program
+			instanceTreeType.BranchesModel.TextureID = gl.TEXTURE1
+			instanceTreeType.BranchesModel.Transform = transform
+			RenderInstances(instanceTreeType.BranchesModel, camera, dome, len(instanceTreeType.Transforms))
 
-		instanceTree.LeavesModel.Program = program
-		instanceTree.LeavesModel.TextureID = gl.TEXTURE2
-		instanceTree.LeavesModel.Transform = transform
-		RenderInstances(instanceTree.LeavesModel, camera, dome, len(instanceTree.Transforms))
+			instanceTreeType.LeavesModel.Program = program
+			instanceTreeType.LeavesModel.TextureID = gl.TEXTURE2
+			instanceTreeType.LeavesModel.Transform = transform
+			RenderInstances(instanceTreeType.LeavesModel, camera, dome, len(instanceTreeType.Transforms))
+		}
 	}
 
 }

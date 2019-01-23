@@ -11,6 +11,7 @@ uniform mat4 project;
 uniform mat4 model;
 uniform vec3 lightPos;
 uniform int u_nbr_instances;
+uniform int textureId;
 
 out vec3 Normal;
 out vec3 FragPos;
@@ -29,10 +30,14 @@ void main()
     LightPos = lightPos;
     Normal = (transpose(inverse(model)) * vec4(normal, 1.0)).xyz;
     TexCoord = texture; 
-    
-    float nbr_instances = u_nbr_instances;
-    float instance_id = gl_InstanceID;
-    float threshold = random(vec2(instance_id/nbr_instances * 500.0));
-    MatColor = mix(color, vec4(color.x, 0.25, color.z, 1.0), threshold);
+    MatColor = color;
+
+    // random grass color
+    if(textureId == 0){
+        float nbr_instances = u_nbr_instances;
+        float instance_id = gl_InstanceID;
+        float threshold = random(vec2(instance_id/nbr_instances * 500.0));
+        MatColor = mix(color, vec4(color.x, 0.25, color.z, 1.0), threshold);
+    }
 
 }
