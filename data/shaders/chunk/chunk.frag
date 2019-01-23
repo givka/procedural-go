@@ -26,6 +26,8 @@ const float minHeightSnow = 1.4;
 const float maxNormalSnow = -0.9;
 const float maxNormalSnowRock = -0.85;
 
+const float minHeightSnowGrass = 1.3;
+
 const float minRock = 1.5;
 
 const float minRockDirt = 1.0;
@@ -42,6 +44,12 @@ const float minWater =-2000.0;
 
 void setTextureCoefficients(inout float coeffs[5])
 {
+    if(Height > minHeightSnowGrass && Height < minHeightSnow && Normal.y < maxNormalSnow || Normal.y < maxNormalGrass){
+            float a_height = smoothstep(minHeightSnowGrass, minHeightSnow, Height);
+            coeffs[0] = a_height;
+            coeffs[3] = 1 - a_height;
+            return;
+    }
     if(Height > minHeightSnow){
         if(Normal.y < maxNormalSnow){
             coeffs[0] = 1.0;
