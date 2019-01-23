@@ -22,48 +22,44 @@ float LinearizeDepth(float depth)
 
 void main()
 {
-	// affects diffuse and specular lighting
-  float lightPower = 2.0f;
-	float ambientStrength = 0.3f;
+    float lightPower = 5.0f;
+    if(textureId == 0){
+        lightPower = 2.0f;
+    }
+    float ambientStrength = 0.3f;
+    float specularStrength = 20.0f;
+	int shininess = 64;
 
 
-	// diffuse and specular intensity are affected by the amount of light they get based on how
-	// far they are from a light source (inverse square of distance)
+
+	
 	float distToLight = length(LightPos - FragPos);
-	// this is not the correct equation for light decay but it is close
-	// see light-casters sample for the proper way
 	float distIntensityDecay = 1.0f / pow(distToLight, 2);
-
 	vec3 ambientLight = ambientStrength * lightColor;
-
 	vec3 norm = normalize(Normal);
 	vec3 dirToLight = normalize(LightPos - FragPos);
 	float lightNormalDiff = max(dot(norm, dirToLight), 0.0);
-
-	// diffuse light is greatest when surface is perpendicular to light (dot product)
 	vec3 diffuse = lightNormalDiff * lightColor;
-	vec3 diffuseLight = lightPower * diffuse */* distIntensityDecay **/ lightColor;
-
-	float specularStrength = 10.0f;
-	int shininess = 64;
+	vec3 diffuseLight = lightPower * diffuse * lightColor;
 	vec3 viewPos = vec3(0.0f, 0.0f, 0.0f);
 	vec3 dirToView = normalize(viewPos - FragPos);
 	vec3 reflectDir = reflect(-dirToLight, norm);
 	float spec = pow(max(dot(dirToView, reflectDir), 0.0), shininess);
 	vec3 specularLight = lightPower * specularStrength * spec * distIntensityDecay * lightColor;
-
 	vec3 result = (diffuseLight + specularLight + ambientLight) * MatColor.xyz;
 
 	if(textureId != 0){
 		vec4 texColor = texture(currentTexture, TexCoord);
+        texColor = mix(texColor, MatColor, 0.25);
 		if(texColor.a < 0.1)
 					discard;
+        result = (diffuseLight + specularLight + ambientLight) * texColor.xyz;
 		color = mix(texColor, vec4(result, 1.0f), 0.5);
 	} else{
 		color = vec4(result, 1.0f);
 	}
 
-	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
-  color = mix(color, vec4(vec3(depth), 1.0), 0.5);
+	float depth = LinearizeDepth(gl_FragCoord.z) / far;
+    color = mix(color, vec4(vec3(depth), 1.0), 0.5);
 	
 }
