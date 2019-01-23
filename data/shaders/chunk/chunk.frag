@@ -194,7 +194,7 @@ void main()
     color = vec4(result, 1.0f);
 	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     color = mix(color, vec4(vec3(depth), 1.0), 0.5);
-    if(RiverHeight > 0.9 /*&& Height < minRock*/ || Height < minSand)
+    if(RiverHeight > 2.5 /*&& Height < minRock*/ || Height < minSand + 0.1)
     {
         color = vec4(0.0, 0.0, 1.0, 1.0);
     }
