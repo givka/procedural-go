@@ -2,6 +2,7 @@ package scr
 
 import (
 	"math"
+	"time"
 
 	"../cam"
 	"../ctx"
@@ -78,6 +79,7 @@ func RenderVegetation(gaia *veg.Gaia, camera *cam.FpsCamera, program *gfx.Progra
 func RenderChunkModel(m *gfx.Model, c *cam.FpsCamera, textureContainer *ter.ChunkTextureContainer, dome *sky.Dome) {
 	m.Program.Use()
 	initialiseUniforms(m, c, dome)
+	gl.Uniform1i(m.Program.GetUniformLocation("time"), int32(time.Now().Unix()))
 	setChunkTextureUniforms(m, textureContainer)
 	gl.BindVertexArray(m.VAO)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.Connectivity)
@@ -103,6 +105,7 @@ func setChunkTextureUniforms(m *gfx.Model, textureContainer *ter.ChunkTextureCon
 	gl.Uniform1i(m.Program.GetUniformLocation("sandTexture"), int32(textureContainer.SandID-gl.TEXTURE0))
 	gl.Uniform1i(m.Program.GetUniformLocation("rockTexture"), int32(textureContainer.RockID-gl.TEXTURE0))
 	gl.Uniform1i(m.Program.GetUniformLocation("grassTexture"), int32(textureContainer.GrassID-gl.TEXTURE0))
+	gl.Uniform1i(m.Program.GetUniformLocation("waterTexture"), int32(textureContainer.WaterID-gl.TEXTURE0))
 
 }
 

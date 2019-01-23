@@ -40,35 +40,41 @@ type ChunkTextureContainer struct {
 	Snow  *gfx.Texture
 	Grass *gfx.Texture
 	Rock  *gfx.Texture
+	Water *gfx.Texture
 
 	DirtID  uint32
 	SandID  uint32
 	SnowID  uint32
 	GrassID uint32
 	RockID  uint32
+	WaterID uint32
 }
 
 func LoadChunkTextures() ChunkTextureContainer {
 	container := ChunkTextureContainer{}
 	var err error
 
-	container.Dirt, err = gfx.NewTextureFromFile("data/textures/chunks/dirt.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	container.Dirt, err = gfx.NewTextureFromFile("data/textures/chunks/dirt.jpg", gl.REPEAT, gl.REPEAT)
 	if err != nil {
 		panic(err.Error())
 	}
-	container.Snow, err = gfx.NewTextureFromFile("data/textures/chunks/snow.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	container.Snow, err = gfx.NewTextureFromFile("data/textures/chunks/snow.jpg", gl.REPEAT, gl.REPEAT)
 	if err != nil {
 		panic(err.Error())
 	}
-	container.Grass, err = gfx.NewTextureFromFile("data/textures/chunks/grass.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	container.Grass, err = gfx.NewTextureFromFile("data/textures/chunks/grass.jpg", gl.REPEAT, gl.REPEAT)
 	if err != nil {
 		panic(err.Error())
 	}
-	container.Rock, err = gfx.NewTextureFromFile("data/textures/chunks/rock.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	container.Rock, err = gfx.NewTextureFromFile("data/textures/chunks/rock.jpg", gl.REPEAT, gl.REPEAT)
 	if err != nil {
 		panic(err.Error())
 	}
-	container.Sand, err = gfx.NewTextureFromFile("data/textures/chunks/sand.jpg", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+	container.Sand, err = gfx.NewTextureFromFile("data/textures/chunks/sand.jpg", gl.REPEAT, gl.REPEAT)
+	if err != nil {
+		panic(err.Error())
+	}
+	container.Water, err = gfx.NewTextureFromFile("data/textures/chunks/water.jpg", gl.REPEAT, gl.REPEAT)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -78,6 +84,7 @@ func LoadChunkTextures() ChunkTextureContainer {
 	container.SnowID = gl.TEXTURE5
 	container.GrassID = gl.TEXTURE6
 	container.RockID = gl.TEXTURE7
+	container.WaterID = gl.TEXTURE8
 	return container
 }
 
@@ -87,6 +94,7 @@ func (container *ChunkTextureContainer) Bind() {
 	container.Snow.Bind(container.SnowID)
 	container.Grass.Bind(container.GrassID)
 	container.Rock.Bind(container.RockID)
+	container.Water.Bind(container.WaterID)
 }
 
 func (container *ChunkTextureContainer) Unbind() {
@@ -95,6 +103,7 @@ func (container *ChunkTextureContainer) Unbind() {
 	container.Snow.UnBind()
 	container.Grass.UnBind()
 	container.Rock.UnBind()
+	container.Water.UnBind()
 }
 
 //relative coordinates

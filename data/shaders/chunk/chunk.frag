@@ -21,7 +21,9 @@ uniform sampler2D rockTexture; //1
 uniform sampler2D dirtTexture; //2
 uniform sampler2D grassTexture;//3
 uniform sampler2D sandTexture; //4
+uniform sampler2D waterTexture; //4
 
+uniform int time;
 
 const float minHeightSnow = 1.4;
 const float maxNormalSnow = -0.9;
@@ -144,15 +146,24 @@ void main()
 {
     vec4 computedColor;
     vec3 computedNormal = Normal;
+	// affects diffuse and specular lighting
+	float lightPower = 4.0f;
+	float ambientStrength = 0.3f;
 
     float coeffs[5] = float[5](0.0, 0.0, 0.0, 0.0, 0.0);
     setTextureCoefficients(coeffs);
     //setTextureCoefficientsNoBranching(coeffs);
     //if water
+    if(Normal.y == 0)
+    discard;
     if(RiverHeight > 2.0 /*&& Height < minRock*/ || Height < minSand + 0.1)
     {
-        computedColor = vec4(0.0, 0.0, 1.0, 1.0);
+        float k = 0.1;
+        float lambda = 2000;
+        computedColor = texture(waterTexture, 0*TexCoord);
         computedNormal = vec3(0.0, -1.0, 0.0);
+        //computedNormal = vec3(cos(float(TexCoord.x * k + time/lambda)), sin(float(TexCoord.x * k + time/lambda)), 0.0);
+        lightPower = 10.0f;
     }else if(textureId != 0){
     	computedColor =
     	coeffs[0] * texture(snowTexture, TexCoord)
@@ -167,9 +178,6 @@ void main()
     }
 
 
-	// affects diffuse and specular lighting
-	float lightPower = 4.0f;
-	float ambientStrength = 0.3f;
 
 	// diffuse and specular intensity are affected by the amount of light they get based on how
 	// far they are from a light source (inverse square of distance)

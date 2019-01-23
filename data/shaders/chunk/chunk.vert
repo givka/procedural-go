@@ -30,7 +30,7 @@ void main()
     vec3 pos = position;
     if(-position.y < seaLevel) pos.y = 2.0;
     gl_Position = project * view * model * vec4(pos, 1.0);
-    FragPos = pos;
+    FragPos = gl_Position.xyz;
     LightPos = lightPos;
 
     mat3 normMatrix = mat3(transpose(inverse(view))) * mat3(transpose(inverse(model)));

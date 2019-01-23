@@ -117,7 +117,7 @@ func main() {
 	hmap.RiverScaleBias.Scale = -3.0
 
 	hmap.PlainNoise = noiselib.DefaultBillow()
-	hmap.PlainNoise.Frequency = 0.01
+	hmap.PlainNoise.Frequency = 0.001
 
 	hmap.PlainScaleBias = noiselib.DefaultScaleBias()
 	hmap.PlainScaleBias.SetSourceModule(0, hmap.PlainNoise)
