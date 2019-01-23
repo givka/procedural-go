@@ -26,13 +26,10 @@ var mesh gfx.Mesh
 var model gfx.Model
 var hmap ter.HeightMap
 
-var trees []*veg.Tree
-
-var chunks []*ter.Chunk
-
 var VIEW_DISTANCE int = 4
 var LOAD_DISTANCE int = 4
 var CHUNK_NB_POINTS uint32 = 64
+var MULTISAMPLING int = 8
 var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
@@ -56,7 +53,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	glfw.WindowHint(glfw.Samples, 8)
+	glfw.WindowHint(glfw.Samples, MULTISAMPLING)
 
 	window := win.NewWindow(ctx.Width(), ctx.Height(), "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", false)
 
