@@ -311,14 +311,14 @@ func programLoop(window *win.Window) error {
 		dome.UpdateSun(camera)
 
 		chunkTextures.Bind()
-		textureBranches.Bind(gl.TEXTURE1)
-		textureLeaves.Bind(gl.TEXTURE2)
 		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures, dome)
 		chunkTextures.Unbind()
+
+		textureBranches.Bind(gl.TEXTURE1)
+		textureLeaves.Bind(gl.TEXTURE2)
+		scr.RenderVegetation(instanceGrass, instanceTrees, camera, programTree, dome)
 		textureBranches.UnBind()
 		textureLeaves.UnBind()
-
-		scr.RenderVegetation(instanceGrass, instanceTrees, camera, programTree, dome)
 
 		textureSky.Bind(gl.TEXTURE3)
 		scr.RenderSky(dome, camera)
