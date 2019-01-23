@@ -143,10 +143,17 @@ float LinearizeDepth(float depth)
 void main()
 {
     vec4 computedColor;
+    vec3 computedNormal = Normal;
+
     float coeffs[5] = float[5](0.0, 0.0, 0.0, 0.0, 0.0);
     setTextureCoefficients(coeffs);
     //setTextureCoefficientsNoBranching(coeffs);
-    if(textureId != 0){
+    //if water
+    if(RiverHeight > 2.0 /*&& Height < minRock*/ || Height < minSand + 0.1)
+    {
+        computedColor = vec4(0.0, 0.0, 1.0, 1.0);
+        computedNormal = vec3(0.0, -1.0, 0.0);
+    }else if(textureId != 0){
     	computedColor =
     	coeffs[0] * texture(snowTexture, TexCoord)
     	+ coeffs[1] * texture(rockTexture, TexCoord)
@@ -173,7 +180,7 @@ void main()
 
 	vec3 ambientLight = ambientStrength * lightColor;
 
-	vec3 norm = normalize(Normal);
+	vec3 norm = normalize(computedNormal);
 	vec3 dirToLight = normalize(LightPos - FragPos);
 	float lightNormalDiff = max(dot(norm, dirToLight), 0.0);
 
@@ -194,10 +201,7 @@ void main()
     color = vec4(result, 1.0f);
 	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     color = mix(color, vec4(vec3(depth), 1.0), 0.5);
-    if(RiverHeight > 2.5 /*&& Height < minRock*/ || Height < minSand + 0.1)
-    {
-        color = vec4(0.0, 0.0, 1.0, 1.0);
-    }
+
     //color.b = 1 - smoothstep(-3.0, -1.0, RiverHeight);
     //norm =
 

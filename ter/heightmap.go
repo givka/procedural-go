@@ -104,7 +104,7 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 				color = mgl32.Vec4{0.0, 0.0, 0.7, 1.0}
 				//textureID = textureContainer.SnowID
 			}
-			color = mgl32.Vec4{color.X(), color.Y(), color.Z(), -float32(heightMap.RiverScaleBias.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step)))}
+			color = mgl32.Vec4{color.X(), color.Y(), color.Z(), -float32(chunk.WaterMap[x + z * (size+1)])}
 
 			var textureScale float64 = 0.1
 
