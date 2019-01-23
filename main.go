@@ -5,6 +5,7 @@ import (
 
 	"log"
 	"runtime"
+	"strconv"
 	"time"
 
 	"./cam"
@@ -183,9 +184,13 @@ func programLoop(window *win.Window) error {
 		panic(err.Error())
 	}
 
-	textureLeaves, err := gfx.NewTextureFromFile("data/textures/tree/leaves.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
-	if err != nil {
-		panic(err.Error())
+	var leavesTextures []*gfx.Texture
+	for index := 0; index < 7; index++ {
+		texture, err := gfx.NewTextureFromFile("data/textures/tree/leaves"+strconv.Itoa(index+1)+".png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+		if err != nil {
+			panic(err.Error())
+		}
+		leavesTextures = append(leavesTextures, texture)
 	}
 
 	textureSky, err := gfx.NewTextureFromFile("data/textures/sky/tint.png", gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
@@ -275,11 +280,15 @@ func programLoop(window *win.Window) error {
 		scr.RenderChunks(renderList, camera, programChunk, &chunkTextures, dome)
 		chunkTextures.Unbind()
 
+		for index, leavesTexture := range leavesTextures {
+			leavesTexture.Bind(gl.TEXTURE10 + uint32(index))
+		}
 		textureBranches.Bind(gl.TEXTURE1)
-		textureLeaves.Bind(gl.TEXTURE2)
 		scr.RenderVegetation(gaia, camera, programInstances, dome)
 		textureBranches.UnBind()
-		textureLeaves.UnBind()
+		for _, leavesTexture := range leavesTextures {
+			leavesTexture.UnBind()
+		}
 
 		textureSky.Bind(gl.TEXTURE3)
 		scr.RenderSky(dome, camera)

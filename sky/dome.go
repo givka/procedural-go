@@ -83,7 +83,7 @@ func getSpherePosition(u float32, v float32, r float32) mgl32.Vec3 {
 }
 
 func (d *Dome) UpdateSun(camera *cam.FpsCamera) {
-	rotation := mgl32.Rotate3DX(mgl32.DegToRad(float32(glfw.GetTime() * 10.0)))
+	rotation := mgl32.Rotate3DX(mgl32.DegToRad(float32(glfw.GetTime()*10.0 + 50)))
 	d.SunPosition = rotation.Mul3x1(mgl32.Vec3{0.0, d.Radius, 0.0})
 	d.LightPosition = mgl32.Vec3{
 		camera.Position().X() + d.SunPosition.X(),
