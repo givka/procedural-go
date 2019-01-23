@@ -32,6 +32,7 @@ var chunks []*ter.Chunk
 
 var VIEW_DISTANCE = 4
 var LOAD_DISTANCE = 4
+var CHUNK_NB_POINTS uint32 = 512
 var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
@@ -75,7 +76,7 @@ func main() {
 	perlin.Quality = noiselib.QualitySTD
 
 	hmap = ter.HeightMap{
-		ChunkNBPoints:  512,
+		ChunkNBPoints:  CHUNK_NB_POINTS,
 		ChunkWorldSize: 12,
 		NbOctaves:      4,
 		Exponent:       1.0,
