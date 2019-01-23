@@ -30,9 +30,9 @@ var trees []*veg.Tree
 
 var chunks []*ter.Chunk
 
-var VIEW_DISTANCE = 4
-var LOAD_DISTANCE = 4
-var CHUNK_NB_POINTS uint32 = 512
+var VIEW_DISTANCE = 2
+var LOAD_DISTANCE = 3
+var CHUNK_NB_POINTS uint32 = 128
 var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
@@ -93,6 +93,22 @@ func main() {
 	hmap.MountainScaleBias.Scale = 2.3
 	hmap.MountainScaleBias.Bias = 0.0
 
+	hmap.RiverNoise = noiselib.DefaultRidgedmulti()
+	hmap.RiverNoise.Seed = 3
+	hmap.RiverNoise.Frequency = 0.03
+	hmap.RiverNoise.Gain = 1.0
+	hmap.RiverAbs = noiselib.Abs{SourceModule:make([]noiselib.Module, 1)}
+	hmap.RiverAbs.SetSourceModule(0, hmap.RiverNoise)
+
+
+	hmap.RiverClamp = noiselib.Clamp{SourceModule:make([]noiselib.Module, 1)}
+	hmap.RiverClamp.SetSourceModule(0, hmap.RiverNoise)
+	hmap.RiverClamp.SetBounds(0.4, 1.0)
+
+	hmap.RiverScaleBias = noiselib.DefaultScaleBias()
+	hmap.RiverScaleBias.SetSourceModule(0, hmap.RiverClamp)
+	hmap.RiverScaleBias.Scale = 1.0
+
 	hmap.PlainNoise = noiselib.DefaultBillow()
 	hmap.PlainNoise.Frequency = 0.01
 
@@ -101,6 +117,13 @@ func main() {
 	hmap.PlainScaleBias.Scale = 0.125
 	hmap.PlainScaleBias.Bias = 0.5
 
+	hmap.PlainAndRiver = noiselib.DefaultSelect()
+	hmap.PlainAndRiver.SetSourceModule(0, hmap.RiverScaleBias)
+	hmap.PlainAndRiver.SetSourceModule(1, hmap.PlainScaleBias)
+	hmap.PlainAndRiver.SetSourceModule(2, hmap.RiverClamp)
+	hmap.PlainAndRiver.SetBounds(0, 0.95)
+	hmap.PlainAndRiver.SetEdgeFalloff(0.5)
+
 	hmap.TerrainType = noiselib.DefaultPerlin()
 	hmap.TerrainType.Frequency = 0.05
 	hmap.TerrainType.Persistence = 0.25
@@ -108,8 +131,9 @@ func main() {
 	hmap.FinalTerrain = noiselib.DefaultSelect()
 	hmap.FinalTerrain.SetSourceModule(0, hmap.MountainScaleBias)
 	hmap.FinalTerrain.SetSourceModule(1, hmap.PlainScaleBias)
+	//hmap.FinalTerrain.SetSourceModule(1, hmap.PlainAndRiver)
 	hmap.FinalTerrain.SetSourceModule(2, hmap.TerrainType)
-	hmap.FinalTerrain.LowerBound = 0
+	hmap.FinalTerrain.LowerBound = 0.0
 	hmap.FinalTerrain.UpperBound = 1000
 	hmap.FinalTerrain.SetEdgeFalloff(0.7)
 	//hmap.FinalTerrain.SetEdgeFalloff(0.125)

@@ -19,9 +19,18 @@ type HeightMap struct {
 	//mountains
 	MountainNoise noiselib.Ridgedmulti
 	MountainScaleBias noiselib.ScaleBias
+	//rivers
+	RiverNoise noiselib.Ridgedmulti
+	RiverAbs   noiselib.Abs
+	RiverScaleBias noiselib.ScaleBias
+	RiverCurve noiselib.Curve
+	RiverClamp noiselib.Clamp
+
 	//flat terrain
 	PlainNoise     noiselib.Billow
 	PlainScaleBias noiselib.ScaleBias
+	//rivers in flat terrain
+	PlainAndRiver noiselib.Select
 	//terrain type selector
 	TerrainType    noiselib.Perlin
 	//Final Terrain
@@ -95,6 +104,8 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 				color = mgl32.Vec4{0.0, 0.0, 0.7, 1.0}
 				//textureID = textureContainer.SnowID
 			}
+			color = mgl32.Vec4{color.X(), color.Y(), color.Z(), float32(heightMap.RiverScaleBias.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step)))}
+
 			var textureScale float64 = 0.1
 
 			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size)) / textureScale) , 1.0)  )}

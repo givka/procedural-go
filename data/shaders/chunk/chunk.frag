@@ -6,6 +6,7 @@ in vec3 LightPos;
 in vec4 MatColor;
 in vec2 TexCoord;
 in float Height;
+in float RiverHeight;
 
 out vec4 color;
 
@@ -193,6 +194,11 @@ void main()
     color = vec4(result, 1.0f);
 	float depth = LinearizeDepth(gl_FragCoord.z) / far; // divide by far for demonstration
     color = mix(color, vec4(vec3(depth), 1.0), 0.5);
+    if(RiverHeight > 0.9 /*&& Height < minRock*/ || Height < minSand)
+    {
+        color = vec4(0.0, 0.0, 1.0, 1.0);
+    }
+    //color.b = 1 - smoothstep(-3.0, -1.0, RiverHeight);
     //norm =
 
 }
