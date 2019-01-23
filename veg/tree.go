@@ -35,7 +35,8 @@ type InstanceTree struct {
 	Transforms    []mgl32.Mat4
 }
 
-func CreateUniqueTrees() []*Tree {
+func createUniqueTrees() []*Tree {
+	var uniqueTrees []*Tree
 	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+FF]F[-F]"))
 	uniqueTrees = append(uniqueTrees, createTreeHQ("F[-F]F[+F][F]"))
 	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+F][-FF]F"))

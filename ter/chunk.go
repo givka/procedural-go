@@ -22,7 +22,9 @@ type Chunk struct {
 	Model           *gfx.Model
 	GrassTransforms []mgl32.Mat4
 	TreesTransforms []mgl32.Mat4
+	TreesModelID    []int
 	IsHQ            bool
+	HasVegetation   bool
 
 	//loading related flags
 	Loaded                  bool

@@ -12,7 +12,7 @@ type InstanceGrass struct {
 	Transforms []mgl32.Mat4
 }
 
-func CreateUniqueGrass(step float32) *gfx.Model {
+func createUniqueGrass(step float32) *gfx.Model {
 	mesh := gfx.Mesh{}
 	width := step
 	height := float32(-0.050)

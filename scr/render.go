@@ -42,19 +42,19 @@ func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
 	gl.BindVertexArray(0)
 }
 
-func RenderVegetation(instanceGrass *veg.InstanceGrass, instanceTrees []*veg.InstanceTree, camera *cam.FpsCamera, program *gfx.Program, dome *sky.Dome) {
+func RenderVegetation(gaia *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program, dome *sky.Dome) {
 	speed := 2.5
 	amp := float32(2.5)
 	angle := mgl32.DegToRad(amp * float32(math.Cos(speed*glfw.GetTime())))
 	transform := mgl32.Rotate3DX(angle).Mul3(mgl32.Rotate3DX(angle)).Mat4()
 
-	instanceGrass.Model.Program = program
-	instanceGrass.Model.Transform = transform
+	gaia.InstanceGrass.Model.Program = program
+	gaia.InstanceGrass.Model.Transform = transform
 
-	RenderInstances(instanceGrass.Model, camera, dome, len(instanceGrass.Transforms))
+	RenderInstances(gaia.InstanceGrass.Model, camera, dome, len(gaia.InstanceGrass.Transforms))
 
-	for index, instanceTree := range instanceTrees {
-		if index == len(instanceTrees)-1 {
+	for index, instanceTree := range gaia.InstanceTrees {
+		if index == len(gaia.InstanceTrees)-1 {
 			transform = transform.Mul4(mgl32.Scale3D(5.0, 5.0, 5.0))
 		}
 		instanceTree.BranchesModel.Program = program
