@@ -87,7 +87,7 @@ void setTextureCoefficientsNoBranching(inout float coeffs[5])
 
 void setTextureCoefficients(inout float coeffs[5])
 {
-    if(Height > minHeightSnowGrass && Height < minHeightSnow && Normal.y < maxNormalSnow || Normal.y < maxNormalGrass){
+    if(Height > minHeightSnowGrass && Height < minHeightSnow && (Normal.y < maxNormalSnow || Normal.y < maxNormalGrass)){
             float a_height = smoothstep(minHeightSnowGrass, minHeightSnow, Height);
             coeffs[0] = a_height;
             coeffs[3] = 1 - a_height;

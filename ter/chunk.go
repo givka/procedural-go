@@ -19,7 +19,8 @@ type Chunk struct {
 	WorldSize       uint32
 	Position        [2]int
 	Map             []float64
-	WaterMap             []float64
+	WaterMap        []float64
+	NormalY			[]float64
 	Model           *gfx.Model
 	GrassTransforms []mgl32.Mat4
 	TreesTransforms []mgl32.Mat4
@@ -174,6 +175,7 @@ func LoadChunk(chunk *Chunk, heightMap *HeightMap, textureContainer *ChunkTextur
 	//fill up heightmap
 	chunk.Map = make([]float64, (chunk.NBPoints+1)*(chunk.NBPoints+1))
 	chunk.WaterMap = make([]float64, (chunk.NBPoints+1)*(chunk.NBPoints+1))
+	chunk.NormalY = make([]float64, (chunk.NBPoints+1)*(chunk.NBPoints+1))
 	step := float64(chunk.WorldSize) / float64(chunk.NBPoints)
 	position := chunk.Position
 	//float conversions before loop
@@ -213,7 +215,7 @@ func getTreesTransforms(chunk *Chunk) []mgl32.Mat4 {
 		for z := 0; z < int(chunk.NBPoints)+1; z += int(chunk.NBPoints / 32) {
 			i := x + z*int(chunk.NBPoints+1)
 			posY := float32(chunk.Map[i])
-			if (posY < 0.0 || posY > 0.10 ) && chunk.WaterMap[i] < 2.0{
+			if (posY < 0.0 || posY > 0.10 ) && chunk.WaterMap[i] < 2.0 || chunk.NormalY[i] > -0.9{
 				continue
 			}
 			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
@@ -235,7 +237,7 @@ func getGrassTransforms(chunk *Chunk) []mgl32.Mat4 {
 		for z := 0; z < int(chunk.NBPoints)+1; z++ {
 			i := x + z*int(chunk.NBPoints+1)
 			posY := float32(chunk.Map[i])
-			if posY < 0.20 || posY > 0.30 {
+			if (posY < 0.20 || posY > 0.30 ) && chunk.WaterMap[i] < 2.0 || chunk.NormalY[i] > -0.9{
 				continue
 			}
 			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
