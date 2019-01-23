@@ -37,10 +37,52 @@ const float maxNormalGrass = -0.9;
 const float maxNormalGrassDirt = -0.85;
 
 const float minHeightGrass = -0.5;
-const float minGrassSand = -1.5;
+const float minDirtSand = -1.5;
 const float minSand = -2.0;
 
 const float minWater =-2000.0;
+
+//attempt to remove branching
+void setTextureCoefficientsNoBranching(inout float coeffs[5])
+{
+    bool found = false;
+
+    bool snowGrass = Height > minHeightSnowGrass && Height < minHeightSnow && Normal.y < maxNormalSnow || Normal.y < maxNormalGrass;
+    bool snow =      !found && Height > minHeightSnow && Normal.y < maxNormalSnow;
+    found = found || snow;
+    bool snowRock =  !found && Height > minHeightSnow && Normal.y < maxNormalSnowRock;
+    found = found || snowRock;
+    bool grass =     !found && Height > minHeightGrass && Normal.y < maxNormalGrass;
+    found = found || grass;
+    bool grassDirt = !found && Height > minHeightGrass && Normal.y < maxNormalGrassDirt;
+    found = found || grassDirt;
+
+    bool rock =      !found && Height > minRock;
+    found = found || rock;
+    bool rockDirt =  !found && Height > minRockDirt;
+    found = found || rockDirt;
+    bool dirt =      !found && Height > minDirt;
+    found = found || dirt;
+    bool dirtSand =  !found && Height > minDirtSand;
+    found = found || dirtSand;
+    bool sand =      !found && Height > minSand;
+    found = found || sand;
+    bool def = !found;
+
+
+    float a_height_snowgrass = smoothstep(minHeightSnowGrass, minHeightSnow, Height);
+    float a_norm_snowrock = smoothstep(maxNormalSnowRock, maxNormalSnow, Normal.y);
+    float a_norm_grassdirt = smoothstep(maxNormalGrassDirt, maxNormalGrass, Normal.y);
+
+    float a_height_rockdirt = smoothstep(minRockDirt, minRock, Height);
+    float a_height_dirtsand = smoothstep(minDirtSand, minDirt, Height);
+
+    coeffs[0] = 1.0 * int(snow)   + a_height_snowgrass * int(snowGrass)      + a_norm_snowrock * int(snowRock);
+    coeffs[1] = 1.0 * int(rock)   + a_height_rockdirt * int(rockDirt)        +(1 - a_norm_snowrock) * int(snowRock);
+    coeffs[2] = 1.0 * int(dirt)   + (1 - a_height_rockdirt) * int(rockDirt)  +(1 - a_norm_grassdirt)* int(grassDirt) + a_height_dirtsand * int(dirtSand);
+    coeffs[3] = 1.0 * int(grass)  + (1 - a_height_snowgrass) * int(snowGrass)+ a_norm_grassdirt * int(grassDirt);
+    coeffs[4] = 1.0 * int(sand)   + (1 - a_height_dirtsand) * int(dirtSand);
+}
 
 void setTextureCoefficients(inout float coeffs[5])
 {
@@ -81,8 +123,8 @@ void setTextureCoefficients(inout float coeffs[5])
     }
     else if(Height > minDirt)
         coeffs[2] = 1.0;
-    else if (Height > minGrassSand){
-        float a = smoothstep(minGrassSand, minDirt, Height);
+    else if (Height > minDirtSand){
+        float a = smoothstep(minDirtSand, minDirt, Height);
         coeffs[2] = a;
         coeffs[4] = 1 - a;
     }
@@ -102,6 +144,7 @@ void main()
     vec4 computedColor;
     float coeffs[5] = float[5](0.0, 0.0, 0.0, 0.0, 0.0);
     setTextureCoefficients(coeffs);
+    //setTextureCoefficientsNoBranching(coeffs);
     if(textureId != 0){
     	computedColor =
     	coeffs[0] * texture(snowTexture, TexCoord)
