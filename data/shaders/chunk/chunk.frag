@@ -21,23 +21,41 @@ uniform sampler2D dirtTexture; //2
 uniform sampler2D grassTexture;//3
 uniform sampler2D sandTexture; //4
 
+
+const float minRock = 1.5;
+const float minRockDirt = 1.0;
+const float minDirt = -0.5;
+const float maxNormalGrass = -0.9;
+const float minHeightGrass = -0.5;
+const float minGrassSand = -1.5;
+const float minSand = -2.0;
+const float minWater =-2000.0;
+
 void setTextureCoefficients(inout float coeffs[5])
 {
     if(Height > 1.4 && Normal.y < -0.9){
         coeffs[0] = 1.0;
         return;
     }
-    if(Height > -0.5 && Normal.y < -0.9){
+    if(Height > minHeightGrass && Normal.y < maxNormalGrass){
             coeffs[3] = 1.0;
             return;
     }
-    if(Height > 1.5)
+    if(Height > minRock)
         coeffs[1] = 1.0;
-    else if(Height > -0.5)
+    else if (Height > minRockDirt){
+        float a = smoothstep(minRockDirt, minRock, Height);
+        coeffs[1] = a;
+        coeffs[2] = 1 - a;
+    }
+    else if(Height > minDirt)
         coeffs[2] = 1.0;
-/*    else if(Height > -0.1)
-        coeffs[3] = 1.0;
-*/    else if(Height > -2.0)
+    else if (Height > minGrassSand){
+        float a = smoothstep(minGrassSand, minDirt, Height);
+        coeffs[2] = a;
+        coeffs[4] = 1 - a;
+    }
+    else if(Height > minSand)
         coeffs[4] = 1.0;
     else coeffs[0] = 0.1;
 }
