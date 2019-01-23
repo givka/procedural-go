@@ -21,23 +21,72 @@ uniform sampler2D dirtTexture; //2
 uniform sampler2D grassTexture;//3
 uniform sampler2D sandTexture; //4
 
+
+const float minHeightSnow = 1.4;
+const float maxNormalSnow = -0.9;
+const float maxNormalSnowRock = -0.85;
+
+const float minHeightSnowGrass = 1.3;
+
+const float minRock = 1.5;
+
+const float minRockDirt = 1.0;
+const float minDirt = -0.5;
+
+const float maxNormalGrass = -0.9;
+const float maxNormalGrassDirt = -0.85;
+
+const float minHeightGrass = -0.5;
+const float minGrassSand = -1.5;
+const float minSand = -2.0;
+
+const float minWater =-2000.0;
+
 void setTextureCoefficients(inout float coeffs[5])
 {
-    if(Height > 1.4 && Normal.y < -0.9){
-        coeffs[0] = 1.0;
-        return;
-    }
-    if(Height > -0.5 && Normal.y < -0.9){
-            coeffs[3] = 1.0;
+    if(Height > minHeightSnowGrass && Height < minHeightSnow && Normal.y < maxNormalSnow || Normal.y < maxNormalGrass){
+            float a_height = smoothstep(minHeightSnowGrass, minHeightSnow, Height);
+            coeffs[0] = a_height;
+            coeffs[3] = 1 - a_height;
             return;
     }
-    if(Height > 1.5)
+    if(Height > minHeightSnow){
+        if(Normal.y < maxNormalSnow){
+            coeffs[0] = 1.0;
+            return;
+        }else if(Normal.y < maxNormalSnowRock){
+            float a = smoothstep(maxNormalSnowRock, maxNormalSnow, Normal.y);
+            coeffs[0] = a;
+            coeffs[1] = 1 - a;
+            return;
+        }
+    }
+    if(Height > minHeightGrass){
+        if(Normal.y < maxNormalGrass){
+            coeffs[3] = 1.0;
+            return;
+        }else if(Normal.y < maxNormalGrassDirt){
+            float a = smoothstep(maxNormalGrassDirt, maxNormalGrass, Normal.y);
+            coeffs[3] = a;
+            coeffs[2] = 1 - a;
+            return;
+        }
+    }
+    if(Height > minRock)
         coeffs[1] = 1.0;
-    else if(Height > -0.5)
+    else if (Height > minRockDirt){
+        float a = smoothstep(minRockDirt, minRock, Height);
+        coeffs[1] = a;
+        coeffs[2] = 1 - a;
+    }
+    else if(Height > minDirt)
         coeffs[2] = 1.0;
-/*    else if(Height > -0.1)
-        coeffs[3] = 1.0;
-*/    else if(Height > -2.0)
+    else if (Height > minGrassSand){
+        float a = smoothstep(minGrassSand, minDirt, Height);
+        coeffs[2] = a;
+        coeffs[4] = 1 - a;
+    }
+    else if(Height > minSand)
         coeffs[4] = 1.0;
     else coeffs[0] = 0.1;
 }
