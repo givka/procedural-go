@@ -211,11 +211,23 @@ func programLoop(window *win.Window) error {
 				chunk.Model.Program = programChunk
 				chunk.Loaded = true //should not need to change other flags if this one is set
 				loadListChangeFlag = true
+				if chunk.Position == currentChunk {
+					chunk.IsHQ = true
+				} else {
+					chunk.IsHQ = false
+				}
 				start := time.Now()
-				instanceGrass.Transforms = append(instanceGrass.Transforms, chunk.GrassTransforms...)
-				gfx.ModelToInstanceModel(instanceGrass.Model, instanceGrass.Transforms)
+				if chunk.IsHQ {
+					instanceGrass.Transforms = append(instanceGrass.Transforms, chunk.GrassTransforms...)
+					gfx.ModelToInstanceModel(instanceGrass.Model, instanceGrass.Transforms)
+				}
 				for _, transform := range chunk.TreesTransforms {
-					index := rand.Intn(len(instanceTrees))
+					index := 0
+					if chunk.IsHQ {
+						index = rand.Intn(len(instanceTrees) - 1)
+					} else {
+						index = len(instanceTrees) - 1
+					}
 					instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
 				}
 				for _, instanceTree := range instanceTrees {
@@ -258,13 +270,25 @@ func programLoop(window *win.Window) error {
 				instanceTree.Transforms = []mgl32.Mat4{}
 			}
 			for _, chunk := range renderList {
-				instanceGrass.Transforms = append(instanceGrass.Transforms, chunk.GrassTransforms...)
-				for _, transform := range chunk.TreesTransforms {
-					index := rand.Intn(len(instanceTrees))
-					instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
+				if chunk.Position == currentChunk {
+					chunk.IsHQ = true
+				} else {
+					chunk.IsHQ = false
+				}
+				if chunk.IsHQ {
+					instanceGrass.Transforms = append(instanceGrass.Transforms, chunk.GrassTransforms...)
+					gfx.ModelToInstanceModel(instanceGrass.Model, instanceGrass.Transforms)
+					for _, transform := range chunk.TreesTransforms {
+						index := rand.Intn(len(instanceTrees) - 1)
+						instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
+					}
+				} else {
+					for _, transform := range chunk.TreesTransforms {
+						index := len(instanceTrees) - 1
+						instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
+					}
 				}
 			}
-			gfx.ModelToInstanceModel(instanceGrass.Model, instanceGrass.Transforms)
 			nbrTrees := 0
 			for _, instanceTree := range instanceTrees {
 				gfx.ModelToInstanceModel(instanceTree.BranchesModel, instanceTree.Transforms)

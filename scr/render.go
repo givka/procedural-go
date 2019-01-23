@@ -53,7 +53,10 @@ func RenderVegetation(instanceGrass *veg.InstanceGrass, instanceTrees []*veg.Ins
 
 	RenderInstances(instanceGrass.Model, camera, dome, len(instanceGrass.Transforms))
 
-	for _, instanceTree := range instanceTrees {
+	for index, instanceTree := range instanceTrees {
+		if index == len(instanceTrees)-1 {
+			transform = transform.Mul4(mgl32.Scale3D(5.0, 5.0, 5.0))
+		}
 		instanceTree.BranchesModel.Program = program
 		instanceTree.BranchesModel.TextureID = gl.TEXTURE1
 		instanceTree.BranchesModel.Transform = transform
