@@ -26,11 +26,10 @@ var mesh gfx.Mesh
 var model gfx.Model
 var hmap ter.HeightMap
 
-
 var VIEW_DISTANCE int = 4
 var LOAD_DISTANCE int = 4
-var CHUNK_NB_POINTS uint32 = 64
-var MULTISAMPLING int = 1
+var CHUNK_NB_POINTS uint32 = 512
+var MULTISAMPLING int = 8
 var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
@@ -99,9 +98,8 @@ func main() {
 	hmap.RiverNoise.Seed = 3
 	hmap.RiverNoise.Frequency = 0.07
 	hmap.RiverNoise.Gain = 1.0
-	hmap.RiverAbs = noiselib.Abs{SourceModule:make([]noiselib.Module, 1)}
+	hmap.RiverAbs = noiselib.Abs{SourceModule: make([]noiselib.Module, 1)}
 	hmap.RiverAbs.SetSourceModule(0, hmap.RiverNoise)
-
 
 	removeMountainRivers := noiselib.DefaultSelect()
 	removeMountainRivers.SetBounds(0.3, 1000)
@@ -110,10 +108,9 @@ func main() {
 	removeMountainRivers.SetSourceModule(2.0, hmap.TerrainType)
 	removeMountainRivers.SetEdgeFalloff(0.1)
 
-	hmap.RiverClamp = noiselib.Clamp{SourceModule:make([]noiselib.Module, 1)}
+	hmap.RiverClamp = noiselib.Clamp{SourceModule: make([]noiselib.Module, 1)}
 	hmap.RiverClamp.SetSourceModule(0, removeMountainRivers)
 	hmap.RiverClamp.SetBounds(0.4, 1.0)
-
 
 	hmap.RiverScaleBias = noiselib.DefaultScaleBias()
 	hmap.RiverScaleBias.SetSourceModule(0, hmap.RiverClamp)
