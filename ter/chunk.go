@@ -19,6 +19,7 @@ type Chunk struct {
 	WorldSize       uint32
 	Position        [2]int
 	Map             []float64
+	WaterMap             []float64
 	Model           *gfx.Model
 	GrassTransforms []mgl32.Mat4
 	TreesTransforms []mgl32.Mat4
@@ -172,6 +173,7 @@ func LoadChunk(chunk *Chunk, heightMap *HeightMap, textureContainer *ChunkTextur
 	}
 	//fill up heightmap
 	chunk.Map = make([]float64, (chunk.NBPoints+1)*(chunk.NBPoints+1))
+	chunk.WaterMap = make([]float64, (chunk.NBPoints+1)*(chunk.NBPoints+1))
 	step := float64(chunk.WorldSize) / float64(chunk.NBPoints)
 	position := chunk.Position
 	//float conversions before loop
@@ -185,6 +187,7 @@ func LoadChunk(chunk *Chunk, heightMap *HeightMap, textureContainer *ChunkTextur
 			posZ := (posf[1])*worldSizef + float64(z)*step
 
 			chunk.Map[index] = heightMap.FinalTerrain.GetValue(float64(posX), 0, float64(posZ))
+			chunk.WaterMap[index] = heightMap.RiverScaleBias.GetValue(float64(posX), 0, float64(posZ))
 		}
 	}
 
@@ -210,7 +213,7 @@ func getTreesTransforms(chunk *Chunk) []mgl32.Mat4 {
 		for z := 0; z < int(chunk.NBPoints)+1; z += int(chunk.NBPoints / 32) {
 			i := x + z*int(chunk.NBPoints+1)
 			posY := float32(chunk.Map[i])
-			if posY < 0.0 || posY > 0.10 {
+			if (posY < 0.0 || posY > 0.10 ) && chunk.WaterMap[i] < 2.0{
 				continue
 			}
 			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
