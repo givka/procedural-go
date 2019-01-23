@@ -24,7 +24,7 @@ void main()
 {
 	// affects diffuse and specular lighting
   float lightPower = 2.0f;
-	float ambientStrength = 0.8f;
+	float ambientStrength = 0.3f;
 
 
 	// diffuse and specular intensity are affected by the amount of light they get based on how

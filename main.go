@@ -26,6 +26,7 @@ var mesh gfx.Mesh
 var model gfx.Model
 var hmap ter.HeightMap
 
+
 var VIEW_DISTANCE int = 4
 var LOAD_DISTANCE int = 4
 var CHUNK_NB_POINTS uint32 = 64
@@ -81,6 +82,10 @@ func main() {
 
 	hmap.Perlin = perlin
 
+	hmap.TerrainType = noiselib.DefaultPerlin()
+	hmap.TerrainType.Frequency = 0.05
+	hmap.TerrainType.Persistence = 0.25
+
 	hmap.MountainNoise = noiselib.DefaultRidgedmulti()
 	hmap.MountainNoise.Frequency = 0.05
 	hmap.MountainNoise.OctaveCount = 14
@@ -90,6 +95,30 @@ func main() {
 	hmap.MountainScaleBias.Scale = 2.3
 	hmap.MountainScaleBias.Bias = 0.0
 
+	hmap.RiverNoise = noiselib.DefaultRidgedmulti()
+	hmap.RiverNoise.Seed = 3
+	hmap.RiverNoise.Frequency = 0.07
+	hmap.RiverNoise.Gain = 1.0
+	hmap.RiverAbs = noiselib.Abs{SourceModule:make([]noiselib.Module, 1)}
+	hmap.RiverAbs.SetSourceModule(0, hmap.RiverNoise)
+
+
+	removeMountainRivers := noiselib.DefaultSelect()
+	removeMountainRivers.SetBounds(0.3, 1000)
+	removeMountainRivers.SetSourceModule(0.0, noiselib.Constant{0.0})
+	removeMountainRivers.SetSourceModule(1.0, hmap.RiverNoise)
+	removeMountainRivers.SetSourceModule(2.0, hmap.TerrainType)
+	removeMountainRivers.SetEdgeFalloff(0.1)
+
+	hmap.RiverClamp = noiselib.Clamp{SourceModule:make([]noiselib.Module, 1)}
+	hmap.RiverClamp.SetSourceModule(0, removeMountainRivers)
+	hmap.RiverClamp.SetBounds(0.4, 1.0)
+
+
+	hmap.RiverScaleBias = noiselib.DefaultScaleBias()
+	hmap.RiverScaleBias.SetSourceModule(0, hmap.RiverClamp)
+	hmap.RiverScaleBias.Scale = -3.0
+
 	hmap.PlainNoise = noiselib.DefaultBillow()
 	hmap.PlainNoise.Frequency = 0.01
 
@@ -98,15 +127,19 @@ func main() {
 	hmap.PlainScaleBias.Scale = 0.125
 	hmap.PlainScaleBias.Bias = 0.5
 
-	hmap.TerrainType = noiselib.DefaultPerlin()
-	hmap.TerrainType.Frequency = 0.05
-	hmap.TerrainType.Persistence = 0.25
+	hmap.PlainAndRiver = noiselib.DefaultSelect()
+	hmap.PlainAndRiver.SetSourceModule(0, hmap.RiverScaleBias)
+	hmap.PlainAndRiver.SetSourceModule(1, hmap.PlainScaleBias)
+	hmap.PlainAndRiver.SetSourceModule(2, hmap.RiverClamp)
+	hmap.PlainAndRiver.SetBounds(0, 0.95)
+	hmap.PlainAndRiver.SetEdgeFalloff(0.5)
 
 	hmap.FinalTerrain = noiselib.DefaultSelect()
 	hmap.FinalTerrain.SetSourceModule(0, hmap.MountainScaleBias)
-	hmap.FinalTerrain.SetSourceModule(1, hmap.PlainScaleBias)
+	//hmap.FinalTerrain.SetSourceModule(1, hmap.PlainScaleBias)
+	hmap.FinalTerrain.SetSourceModule(1, hmap.PlainAndRiver)
 	hmap.FinalTerrain.SetSourceModule(2, hmap.TerrainType)
-	hmap.FinalTerrain.LowerBound = 0
+	hmap.FinalTerrain.LowerBound = 0.0
 	hmap.FinalTerrain.UpperBound = 1000
 	hmap.FinalTerrain.SetEdgeFalloff(0.7)
 	//hmap.FinalTerrain.SetEdgeFalloff(0.125)
