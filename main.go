@@ -26,13 +26,11 @@ var mesh gfx.Mesh
 var model gfx.Model
 var hmap ter.HeightMap
 
-var trees []*veg.Tree
 
-var chunks []*ter.Chunk
-
-var VIEW_DISTANCE = 2
-var LOAD_DISTANCE = 3
-var CHUNK_NB_POINTS uint32 = 128
+var VIEW_DISTANCE int = 4
+var LOAD_DISTANCE int = 4
+var CHUNK_NB_POINTS uint32 = 512
+var MULTISAMPLING int = 8
 var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
@@ -56,7 +54,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	glfw.WindowHint(glfw.Samples, 8)
+	glfw.WindowHint(glfw.Samples, MULTISAMPLING)
 
 	window := win.NewWindow(ctx.Width(), ctx.Height(), "ProceduralGo - Arthur BARRIERE - Adrien BOUCAUD", false)
 
@@ -157,11 +155,11 @@ func programLoop(window *win.Window) error {
 	}
 	defer programBasic.Delete()
 
-	programTree, err := gfx.NewProgramFromVertFrag("tree")
+	programInstances, err := gfx.NewProgramFromVertFrag("instances")
 	if err != nil {
 		return err
 	}
-	defer programTree.Delete()
+	defer programInstances.Delete()
 
 	programChunk, err := gfx.NewProgramFromVertFrag("chunk")
 	if err != nil {
@@ -212,9 +210,11 @@ func programLoop(window *win.Window) error {
 		go ter.ChunkLoadingWorker(loadQueue, &hmap, &chunkTextures)
 	}
 
+	step := float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints)
+	gaia := veg.InitialiseVegetation(step)
+
 	loadListChangeFlag := true
 	currentChunkChanged := false
-	gaia := veg.InitialiseVegetation(float32(hmap.ChunkWorldSize) / float32(hmap.ChunkNBPoints))
 	dome := sky.CreateDome(programSky, gl.TEXTURE3)
 
 	for !window.ShouldClose() {
@@ -254,10 +254,8 @@ func programLoop(window *win.Window) error {
 		renderList = ter.GetRenderList(&hmap, visibilityList, *camera)
 
 		if currentChunkChanged {
-			gaia.ResetVegetation()
-			for _, chunk := range renderList {
-				gaia.CreateChunkVegetation(chunk, currentChunk)
-			}
+			gaia.ResetInstanceTransfoms()
+			gaia.RedrawAllChunks(renderList, currentChunk)
 			currentChunkChanged = false
 		}
 
@@ -274,7 +272,7 @@ func programLoop(window *win.Window) error {
 
 		textureBranches.Bind(gl.TEXTURE1)
 		textureLeaves.Bind(gl.TEXTURE2)
-		scr.RenderVegetation(gaia, camera, programTree, dome)
+		scr.RenderVegetation(gaia, camera, programInstances, dome)
 		textureBranches.UnBind()
 		textureLeaves.UnBind()
 

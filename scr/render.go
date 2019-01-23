@@ -42,27 +42,30 @@ func RenderSky(dome *sky.Dome, camera *cam.FpsCamera) {
 	gl.BindVertexArray(0)
 }
 
-func RenderVegetation(g *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program, dome *sky.Dome) {
+func RenderVegetation(gaia *veg.Gaia, camera *cam.FpsCamera, program *gfx.Program, dome *sky.Dome) {
 	speed := 2.5
 	amp := float32(2.5)
 	angle := mgl32.DegToRad(amp * float32(math.Cos(speed*glfw.GetTime())))
 	transform := mgl32.Rotate3DX(angle).Mul3(mgl32.Rotate3DX(angle)).Mat4()
 
-	g.InstanceGrass.Model.Program = program
-	g.InstanceGrass.Model.Transform = transform
+	gaia.InstanceGrass.Model.Program = program
+	gaia.InstanceGrass.Model.Transform = transform
 
-	RenderInstances(g.InstanceGrass.Model, camera, dome, len(g.InstanceGrass.Transforms))
+	RenderInstances(gaia.InstanceGrass.Model, camera, dome, len(gaia.InstanceGrass.Transforms))
 
-	for _, instanceTree := range g.InstanceTrees {
-		instanceTree.Parent.BranchesModel.Program = program
-		instanceTree.Parent.BranchesModel.TextureID = gl.TEXTURE1
-		instanceTree.Parent.BranchesModel.Transform = transform
-		RenderInstances(instanceTree.Parent.BranchesModel, camera, dome, len(instanceTree.Transforms))
+	for index, instanceTree := range gaia.InstanceTrees {
+		if index == len(gaia.InstanceTrees)-1 {
+			transform = transform.Mul4(mgl32.Scale3D(5.0, 5.0, 5.0))
+		}
+		instanceTree.BranchesModel.Program = program
+		instanceTree.BranchesModel.TextureID = gl.TEXTURE1
+		instanceTree.BranchesModel.Transform = transform
+		RenderInstances(instanceTree.BranchesModel, camera, dome, len(instanceTree.Transforms))
 
-		instanceTree.Parent.LeavesModel.Program = program
-		instanceTree.Parent.LeavesModel.TextureID = gl.TEXTURE2
-		instanceTree.Parent.LeavesModel.Transform = transform
-		RenderInstances(instanceTree.Parent.LeavesModel, camera, dome, len(instanceTree.Transforms))
+		instanceTree.LeavesModel.Program = program
+		instanceTree.LeavesModel.TextureID = gl.TEXTURE2
+		instanceTree.LeavesModel.Transform = transform
+		RenderInstances(instanceTree.LeavesModel, camera, dome, len(instanceTree.Transforms))
 	}
 
 }

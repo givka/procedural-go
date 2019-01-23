@@ -7,9 +7,7 @@ import (
 	"strings"
 
 	"../gfx"
-	"../ter"
 
-	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -32,11 +30,13 @@ type Branch struct {
 }
 
 type InstanceTree struct {
-	Parent     *Tree
-	Transforms []mgl32.Mat4
+	BranchesModel *gfx.Model
+	LeavesModel   *gfx.Model
+	Transforms    []mgl32.Mat4
 }
 
-func CreateUniqueTrees() []*Tree {
+func createUniqueTrees() []*Tree {
+	var uniqueTrees []*Tree
 	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+FF]F[-F]"))
 	uniqueTrees = append(uniqueTrees, createTreeHQ("F[-F]F[+F][F]"))
 	uniqueTrees = append(uniqueTrees, createTreeHQ("F[+F][-FF]F"))
@@ -72,46 +72,6 @@ func createTreeLQ() *Tree {
 	branches = []Branch{Branch{radius: 0.001, height: -0.05, position: mgl32.Vec3{0, -0.05, 0}}}
 	tree.LeavesModel = createLeavesModel(branches, 0.05)
 	return tree
-}
-
-func GetSurroundingForests(instanceTrees []*InstanceTree, chunk *ter.Chunk, isHQ bool) []*InstanceTree {
-	instanceTrees = getInstanceTrees(chunk, isHQ, instanceTrees)
-
-	for _, instanceTree := range instanceTrees {
-		if len(instanceTree.Transforms) > 0 {
-			gfx.ModelToInstanceModel(instanceTree.Parent.BranchesModel, instanceTree.Transforms)
-			gfx.ModelToInstanceModel(instanceTree.Parent.LeavesModel, instanceTree.Transforms)
-		}
-	}
-	return instanceTrees
-}
-
-func getInstanceTrees(chunk *ter.Chunk, isHQ bool, instanceTrees []*InstanceTree) []*InstanceTree {
-	step := float32(chunk.WorldSize) / float32(chunk.NBPoints)
-	angle := float32(5.0 * math.Cos(glfw.GetTime()))
-
-	for x := 0; x < int(chunk.NBPoints)+1; x += int(chunk.NBPoints / 32) {
-		for z := 0; z < int(chunk.NBPoints)+1; z += int(chunk.NBPoints / 32) {
-			i := x + z*int(chunk.NBPoints+1)
-			posY := float32(chunk.Map[i])
-			if posY < 0.0 || posY > 0.10 {
-				continue
-			}
-			posX := float32(chunk.Position[0])*float32(chunk.WorldSize) + float32(x)*step
-			posZ := float32(chunk.Position[1])*float32(chunk.WorldSize) + float32(z)*step
-			transform := mgl32.Translate3D(posX, -2*posY, posZ).Mul4(mgl32.Rotate3DY(posY * 360.0).Mat4())
-			transform = transform.Mul4(mgl32.Rotate3DX(mgl32.DegToRad(angle)).Mat4())
-			index := 0
-			if !isHQ {
-				transform = transform.Mul4(mgl32.Scale3D(5, 5, 5))
-				index = len(instanceTrees) - 1
-			} else {
-				index = rand.Intn(len(instanceTrees) - 1)
-			}
-			instanceTrees[index].Transforms = append(instanceTrees[index].Transforms, transform)
-		}
-	}
-	return instanceTrees
 }
 
 func createLeavesModel(branches []Branch, customSizeLeaves ...float32) *gfx.Model {
