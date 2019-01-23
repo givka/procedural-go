@@ -28,8 +28,8 @@ var hmap ter.HeightMap
 
 var VIEW_DISTANCE int = 4
 var LOAD_DISTANCE int = 4
-var CHUNK_NB_POINTS uint32 = 512
-var MULTISAMPLING int = 8
+var CHUNK_NB_POINTS uint32 = 64
+var MULTISAMPLING int = 1
 var NUM_WORKERS = 6
 
 // PERLIN CONFIG VARS
