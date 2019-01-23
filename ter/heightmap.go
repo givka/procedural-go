@@ -4,7 +4,6 @@ import (
 	"../gfx"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
-	"math"
 )
 
 type HeightMap struct {
@@ -110,7 +109,7 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 			chunk.NormalY[x + z * (size + 1)] = float64(normal.Y())
 			var textureScale float64 = 1.0/16.0
 
-			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size+1)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size+1)) / textureScale) , 1.0)  )}
+			texture := mgl32.Vec2{float32(   ( (float64(x)/float64(size-10)) / textureScale)  ), float32(  ((float64(z)/float64(size-10)) / textureScale)   )}
 
 			v := gfx.Vertex{
 				Position: position,
