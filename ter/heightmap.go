@@ -59,25 +59,27 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 			var left float64 = 0.0
 			var right float64 = 0.0
 			{
-				if z > 0 {
+				//up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1] - 1)*float64(step))
+
+				if z > 10 {
 					up = -chunk.Map[x+(z-1)*(size+1)]
 				} else {
 					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1] - 1)*float64(step))
 				}
-				if z < size {
+				if z < size-10 {
 					down = -chunk.Map[x+(z+1)*(size+1)]
 				} else {
-					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1] + 1)*float64(step))
+					down = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0])*float64(step), 0, float64(z + size * chunk.Position[1] + 1)*float64(step))
 				}
-				if x > 0 {
+				if x > 10 {
 					left = -chunk.Map[x-1+z*(size+1)]
 				} else {
-					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] - 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
+					left = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] - 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
 				}
-				if x < size {
+				if x < size-10 {
 					right = -chunk.Map[x+1+z*(size+1)]
 				} else {
-					up = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] + 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
+					right = -heightMap.FinalTerrain.GetValue(float64(x + size * chunk.Position[0] + 1)*float64(step), 0, float64(z + size * chunk.Position[1])*float64(step))
 				}
 			}
 			normal := mgl32.Vec3{float32(left - right) / step, -2, float32(down - up) / step}
@@ -106,9 +108,9 @@ func CreateChunkPolyMesh(chunk Chunk, textureContainer *ChunkTextureContainer, h
 			}
 			color = mgl32.Vec4{color.X(), color.Y(), color.Z(), -float32(chunk.WaterMap[x + z * (size+1)])}
 			chunk.NormalY[x + z * (size + 1)] = float64(normal.Y())
-			var textureScale float64 = 0.1
+			var textureScale float64 = 1.0/16.0
 
-			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size)) / textureScale) , 1.0)  )}
+			texture := mgl32.Vec2{float32(   math.Mod(( (float64(x)/float64(size+1)) / textureScale) , 1.0)  ), float32(   math.Mod(((float64(z)/float64(size+1)) / textureScale) , 1.0)  )}
 
 			v := gfx.Vertex{
 				Position: position,
