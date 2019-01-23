@@ -37,7 +37,7 @@ const float minDirt = -0.5;
 const float maxNormalGrass = -0.9;
 const float maxNormalGrassDirt = -0.85;
 
-const float minHeightGrass = -0.0;
+const float minHeightGrass = -0.5;
 const float minDirtSand = -1.5;
 const float minSand = -2.0;
 
