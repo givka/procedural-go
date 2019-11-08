@@ -4,8 +4,8 @@ import (
 	"math"
 	"math/rand"
 
-	"../gfx"
-	"../ter"
+	"github.com/givka/procedural-go/gfx"
+	"github.com/givka/procedural-go/ter"
 	"github.com/go-gl/mathgl/mgl32"
 )
 

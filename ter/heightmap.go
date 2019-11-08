@@ -1,7 +1,7 @@
 package ter
 
 import (
-	"../gfx"
+	"github.com/givka/procedural-go/gfx"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/worldsproject/noiselib"
 )

@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"../gfx"
+	"github.com/givka/procedural-go/gfx"
 
 	"github.com/go-gl/mathgl/mgl32"
 )
