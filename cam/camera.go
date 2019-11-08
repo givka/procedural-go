@@ -3,7 +3,7 @@ package cam
 import (
 	"math"
 
-	"../win"
+	"github.com/givka/procedural-go/win"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 )

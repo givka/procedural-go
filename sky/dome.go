@@ -3,8 +3,8 @@ package sky
 import (
 	"math"
 
-	"../cam"
-	"../gfx"
+	"github.com/givka/procedural-go/cam"
+	"github.com/givka/procedural-go/gfx"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
